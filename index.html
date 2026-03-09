@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#080C0F"/>
+<title>Kettlebell Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#080C0F;--bgCard:#0F1419;--border:#1E2A35;
+  --accent:#FF5722;--accentDim:#CC4419;
+  --gold:#FFC107;--text:#F0F4F8;--muted:#607080;
+  --success:#00BFA5;--rest:#1565C0;
+  --logBlue:#2196F3;
+  --axe:#9C27B0;--axeDim:#6A0080;--axeGlow:#CE93D8;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overscroll-behavior:none;font-size:17px;}
+#app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+.screen{display:flex;flex-direction:column;flex:1;}
+button{cursor:pointer;font-family:'DM Sans',sans-serif;border:none;outline:none;}
+button:active{transform:scale(0.96);transition:transform 0.08s;}
+a{color:var(--text);text-decoration:none;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--border);}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{position:sticky;bottom:0;z-index:20;display:flex;background:var(--bgCard);border-top:1.5px solid var(--border);}
+.nav-btn{flex:1;padding:11px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--muted);font-size:10px;letter-spacing:0.5px;transition:color 0.2s;}
+.nav-btn.active{color:var(--accent);}
+.nav-btn .ni{font-size:22px;line-height:1;}
+
+/* ── HOME ── */
+.home-wrap{flex:1;overflow-y:auto;}
+.home-header{padding:38px 24px 8px;text-align:center;}
+.home-label{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:5px;color:var(--accent);margin-bottom:6px;}
+.home-title{font-family:'Bebas Neue',sans-serif;font-size:44px;color:var(--text);line-height:1;}
+.home-sub{font-size:14px;color:var(--muted);margin-top:8px;}
+.day-cards{padding:18px 18px 4px;display:flex;flex-direction:column;gap:12px;}
+.day-card{background:var(--bgCard);border:1.5px solid var(--border);border-radius:20px;padding:18px 16px;width:100%;color:var(--text);display:flex;align-items:center;gap:16px;text-align:left;}
+.day-card-inner{flex:1;}
+.day-name{font-family:'Bebas Neue',sans-serif;font-size:24px;line-height:1;}
+.day-focus{font-size:13px;margin-top:3px;}
+.day-dur{font-size:12px;color:var(--muted);margin-top:3px;}
+.day-emoji{font-size:40px;flex-shrink:0;}
+.today-badge{border-radius:10px;padding:4px 12px;font-size:11px;font-weight:700;color:#000;letter-spacing:1px;flex-shrink:0;}
+.home-recent{padding:14px 18px 24px;}
+.recent-label{font-size:12px;letter-spacing:3px;color:var(--muted);margin-bottom:10px;}
+.recent-row{background:var(--bgCard);border-radius:12px;padding:11px 16px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;}
+.recent-day{font-family:'Bebas Neue',sans-serif;font-size:18px;}
+.recent-info{font-size:12px;color:var(--muted);}
+
+/* ── WORKOUT ── */
+.topbar{display:flex;align-items:center;padding:18px 18px 10px;gap:12px;}
+.back-btn{background:none;color:var(--muted);font-size:32px;padding:0 10px 0 0;line-height:1;}
+.topbar-center{flex:1;}
+.topbar-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;}
+.topbar-step{font-size:12px;color:var(--muted);margin-top:2px;}
+.topbar-round{font-size:13px;color:var(--muted);white-space:nowrap;}
+.progress-wrap{height:4px;background:var(--border);margin:0 18px;}
+.progress-bar{height:100%;border-radius:2px;transition:width 0.4s ease;}
+.ex-name-wrap{padding:22px 24px 6px;text-align:center;}
+.ex-name{font-family:'Bebas Neue',sans-serif;line-height:1.05;}
+.amrap-sub{font-size:12px;color:var(--gold);letter-spacing:3px;margin-top:6px;}
+.timer-wrap{display:flex;justify-content:center;margin:10px 0 4px;}
+.no-timer-circle{width:160px;height:160px;border-radius:50%;border:5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:44px;}
+@keyframes pulse-red{0%{transform:scale(1);}50%{transform:scale(1.04);}100%{transform:scale(1);}}
+.countdown-pulse{animation:pulse-red 0.5s ease;}
+.reps-wrap{text-align:center;padding:4px 24px 14px;}
+.reps-label{font-family:'Bebas Neue',sans-serif;font-size:34px;transition:color 0.2s;}
+.cue-text{font-size:13px;color:var(--muted);margin-top:5px;font-style:italic;}
+.amrap-card{background:var(--bgCard);margin:0 18px 14px;border-radius:14px;padding:14px 18px;border:1px solid var(--border);}
+.amrap-title{font-size:13px;font-weight:700;margin-bottom:7px;}
+.amrap-schema{font-size:15px;color:var(--gold);}
+.amrap-note{font-size:12px;color:var(--muted);margin-top:5px;}
+.timer-btns{display:flex;gap:12px;padding:0 18px 12px;}
+.btn-main{flex:1;padding:18px 16px;border-radius:16px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:18px;color:var(--text);display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-reset{width:62px;padding:18px 0;border-radius:16px;background:var(--bgCard);border:1.5px solid var(--border);font-size:22px;color:var(--text);display:flex;align-items:center;justify-content:center;}
+.action-btns{display:flex;gap:12px;padding:0 18px;margin-bottom:10px;}
+.btn-video{flex:1;padding:17px 16px;border-radius:16px;background:var(--bgCard);border:1.5px solid var(--border);font-size:15px;color:var(--text);display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;}
+.btn-next{flex:1.6;padding:17px 16px;border-radius:16px;border:1.5px solid var(--border);background:var(--bgCard);font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;color:var(--text);display:flex;align-items:center;justify-content:center;}
+.ladder-wrap{padding:8px 18px 18px;}
+.ladder-label{font-size:11px;color:var(--muted);letter-spacing:3px;margin-bottom:8px;}
+.ladder-pills{display:flex;gap:6px;flex-wrap:wrap;}
+.ladder-pill{width:34px;height:34px;border-radius:8px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--muted);}
+
+/* ── DONE / LOG FORM ── */
+.done-screen{display:flex;flex-direction:column;align-items:center;flex:1;padding:28px 22px 32px;overflow-y:auto;}
+.done-emoji{font-size:76px;margin-bottom:12px;}
+.done-title{font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:1;margin-bottom:6px;text-align:center;}
+.done-sub{font-size:15px;color:var(--muted);margin-bottom:24px;text-align:center;}
+.log-form{width:100%;display:flex;flex-direction:column;gap:14px;margin-bottom:20px;}
+.log-section-label{font-size:11px;letter-spacing:3px;color:var(--muted);margin-bottom:4px;}
+.log-row{display:flex;gap:10px;}
+.log-field{flex:1;display:flex;flex-direction:column;gap:5px;}
+.log-input{background:var(--bgCard);border:1.5px solid var(--border);border-radius:12px;padding:13px 14px;color:var(--text);font-size:16px;font-family:'DM Sans',sans-serif;width:100%;}
+.log-input:focus{border-color:var(--logBlue);outline:none;}
+.log-input::placeholder{color:var(--muted);}
+/* Feeling pills */
+.feel-pills{display:flex;gap:8px;}
+.feel-pill{flex:1;padding:12px 6px;border-radius:12px;border:1.5px solid var(--border);background:var(--bgCard);font-size:20px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:border-color 0.2s;}
+.feel-pill span{font-size:10px;color:var(--muted);}
+.feel-pill.sel{border-color:var(--logBlue);background:#0A1520;}
+/* Talk test pills */
+.talk-pills{display:flex;gap:8px;}
+.talk-pill{flex:1;padding:11px 8px;border-radius:12px;border:1.5px solid var(--border);background:var(--bgCard);font-size:13px;font-weight:700;text-align:center;cursor:pointer;color:var(--muted);transition:all 0.2s;}
+.talk-pill.sel-ok{border-color:#00BFA5;color:#00BFA5;background:#001A14;}
+.talk-pill.sel-no{border-color:#EF5350;color:#EF5350;background:#1A0000;}
+.btn-save{width:100%;padding:18px;border-radius:16px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:17px;color:#000;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-skip{width:100%;padding:15px;border-radius:16px;background:var(--bgCard);border:1.5px solid var(--border);font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;color:var(--muted);}
+
+/* ── LOG PAGE ── */
+.log-page{flex:1;overflow-y:auto;}
+.log-header{padding:32px 24px 16px;}
+.log-header-title{font-family:'Bebas Neue',sans-serif;font-size:40px;color:var(--text);line-height:1;}
+.log-header-sub{font-size:13px;color:var(--muted);margin-top:6px;}
+
+/* Stat cards row */
+.stat-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 18px 18px;}
+.stat-card{background:var(--bgCard);border:1.5px solid var(--border);border-radius:16px;padding:14px 16px;}
+.stat-card.full{grid-column:1/-1;}
+.stat-label{font-size:10px;letter-spacing:2.5px;color:var(--muted);margin-bottom:6px;}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:34px;line-height:1;}
+.stat-sub{font-size:12px;color:var(--muted);margin-top:4px;}
+
+/* Mini bar chart */
+.mini-bars{display:flex;align-items:flex-end;gap:5px;height:56px;margin-top:8px;}
+.mini-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.mini-bar{width:100%;border-radius:4px 4px 0 0;min-height:3px;transition:height 0.4s ease;}
+.mini-bar-lbl{font-size:9px;color:var(--muted);}
+
+/* Donut chart */
+.donut-wrap{display:flex;align-items:center;gap:16px;margin-top:6px;}
+.donut-legend{display:flex;flex-direction:column;gap:6px;flex:1;}
+.donut-leg-item{display:flex;align-items:center;gap:8px;font-size:12px;}
+.donut-leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+/* Trend HR chart */
+.hr-chart{margin-top:8px;position:relative;height:60px;}
+.hr-line-svg{width:100%;height:100%;}
+
+/* Log list */
+.log-list-header{display:flex;justify-content:space-between;align-items:center;padding:0 18px 10px;}
+.log-list-title{font-size:12px;letter-spacing:3px;color:var(--muted);}
+.log-clear-btn{font-size:12px;color:#EF5350;background:none;padding:4px 8px;}
+.log-entry{background:var(--bgCard);border-radius:14px;margin:0 18px 9px;padding:14px 16px;border:1.5px solid var(--border);}
+.log-entry-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.log-entry-day{font-family:'Bebas Neue',sans-serif;font-size:22px;}
+.log-entry-date{font-size:12px;color:var(--muted);}
+.log-entry-chips{display:flex;gap:6px;flex-wrap:wrap;}
+.log-chip{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);color:var(--muted);display:flex;align-items:center;gap:4px;}
+.log-entry-note{margin-top:8px;font-size:13px;color:var(--muted);font-style:italic;border-top:1px solid var(--border);padding-top:8px;}
+.log-del-btn{font-size:16px;color:var(--muted);background:none;padding:2px 6px;margin-left:8px;}
+
+/* empty state */
+.empty-state{text-align:center;padding:50px 24px;color:var(--muted);}
+.empty-icon{font-size:52px;margin-bottom:12px;}
+.empty-text{font-size:14px;line-height:1.6;}
+
+/* Sound hint */
+#sound-hint{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1E2A35;color:#F0F4F8;font-size:13px;padding:11px 22px;border-radius:30px;pointer-events:none;opacity:0;transition:opacity 0.4s;white-space:nowrap;z-index:99;}
+#sound-hint.show{opacity:1;}
+
+/* ── AXE PAGE ── */
+.axe-page{flex:1;overflow-y:auto;padding-bottom:4px;}
+.axe-page-header{padding:32px 24px 4px;}
+.axe-page-label{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:5px;color:var(--axe);margin-bottom:4px;}
+.axe-page-title{font-family:'Bebas Neue',sans-serif;font-size:40px;line-height:1;color:var(--text);}
+.axe-page-sub{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.55;}
+
+/* Setup card */
+.axe-setup-card{background:var(--bgCard);border:1.5px solid var(--axe);border-radius:20px;padding:20px 18px;margin:14px 18px 0;}
+.axe-setup-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--axeGlow);margin-bottom:14px;}
+.axe-param-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.axe-param-box{background:#0A0010;border-radius:12px;padding:12px 14px;}
+.axe-param-lbl{font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:4px;}
+.axe-param-val{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--text);}
+.axe-param-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+/* Stepper inline */
+.axe-stepper{display:flex;align-items:center;gap:8px;margin-top:6px;}
+.axe-step-btn{width:34px;height:34px;border-radius:8px;background:#1A0025;border:1.5px solid var(--axe);color:var(--axeGlow);font-size:20px;display:flex;align-items:center;justify-content:center;font-weight:700;}
+.axe-step-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);min-width:40px;text-align:center;}
+.axe-step-unit{font-size:13px;color:var(--muted);}
+
+/* Stop signs */
+.axe-stop-box{background:#150005;border:1.5px solid #4A0020;border-radius:14px;padding:14px 16px;margin:14px 18px 0;}
+.axe-stop-title{font-size:11px;font-weight:700;color:#FF4081;letter-spacing:2px;margin-bottom:8px;}
+.axe-stop-item{font-size:12px;color:#FFCDD2;padding:5px 0;display:flex;align-items:flex-start;gap:8px;border-bottom:1px solid #280010;}
+.axe-stop-item:last-child{border-bottom:none;}
+.axe-stop-n{font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF4081;flex-shrink:0;width:16px;}
+
+/* Progressione step-loading */
+.axe-prog-card{background:var(--bgCard);border:1.5px solid var(--border);border-radius:16px;padding:16px 18px;margin:14px 18px 0;}
+.axe-prog-title{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--axeGlow);margin-bottom:4px;}
+.axe-prog-sub{font-size:12px;color:var(--muted);margin-bottom:12px;}
+.axe-prog-bar-wrap{background:#0A0010;border-radius:6px;height:8px;overflow:hidden;margin-bottom:6px;}
+.axe-prog-bar{height:100%;border-radius:6px;background:var(--axe);transition:width 0.5s ease;}
+.axe-prog-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);}
+.axe-prog-phase{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.axe-phase-pill{font-size:11px;padding:4px 12px;border-radius:20px;border:1.5px solid var(--border);color:var(--muted);}
+.axe-phase-pill.active{border-color:var(--axe);color:var(--axeGlow);background:#150020;}
+
+/* Start button */
+.axe-start-btn{width:calc(100% - 36px);margin:16px 18px 0;padding:20px;border-radius:16px;background:var(--axe);font-family:'DM Sans',sans-serif;font-weight:700;font-size:18px;color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;}
+.axe-start-btn:disabled{background:var(--border);color:var(--muted);}
+
+/* Storico AXE */
+.axe-hist-section{padding:14px 18px 6px;}
+.axe-hist-label{font-size:11px;letter-spacing:3px;color:var(--muted);margin-bottom:10px;}
+.axe-hist-row{background:var(--bgCard);border-left:3px solid var(--axe);border-radius:0 12px 12px 0;padding:11px 14px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;}
+.axe-hist-sets{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--axeGlow);}
+.axe-hist-meta{font-size:12px;color:var(--muted);text-align:right;}
+
+/* ── AXE WORKOUT SCREEN ── */
+.axe-wk-screen{display:flex;flex-direction:column;flex:1;background:var(--bg);}
+/* HUD superiore */
+.axe-hud{display:flex;background:#0A0010;border-bottom:1.5px solid #2A0035;padding:14px 20px;justify-content:space-between;}
+.axe-hud-item{text-align:center;}
+.axe-hud-val{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1;}
+.axe-hud-lbl{font-size:10px;letter-spacing:2px;color:var(--muted);margin-top:2px;}
+/* Fase attuale */
+.axe-phase-display{text-align:center;padding:18px 24px 6px;}
+.axe-phase-name{font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:1;}
+.axe-phase-hint{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.5;}
+/* Ring centrale */
+.axe-ring-wrap{display:flex;justify-content:center;margin:8px 0 4px;}
+/* Info reps */
+.axe-reps-display{text-align:center;padding:4px 24px 10px;}
+.axe-reps-num{font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:1;}
+.axe-reps-lbl{font-size:13px;color:var(--muted);margin-top:3px;}
+/* Talk test banner — appare a metà sessione */
+.axe-talk-banner{background:#0A0A1A;border:1.5px solid #2A2A4A;border-radius:14px;margin:0 18px 10px;padding:12px 16px;display:flex;align-items:center;gap:12px;}
+.axe-talk-icon{font-size:24px;flex-shrink:0;}
+.axe-talk-text{font-size:12px;color:var(--muted);flex:1;line-height:1.5;}
+.axe-talk-ok{padding:8px 14px;border-radius:10px;background:#003D20;border:1.5px solid #00BFA5;font-weight:700;font-size:12px;color:#00BFA5;}
+.axe-talk-ko{padding:8px 14px;border-radius:10px;background:#3D0000;border:1.5px solid #EF5350;font-weight:700;font-size:12px;color:#EF5350;}
+/* Bottoni azione */
+.axe-action-row{display:flex;gap:10px;padding:0 18px 12px;}
+.axe-btn-go{flex:2;padding:20px;border-radius:16px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:18px;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;}
+.axe-btn-abort{flex:1;padding:20px;border-radius:16px;background:var(--bgCard);border:1.5px solid var(--border);font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;color:var(--muted);}
+/* Done AXE */
+.axe-done-screen{display:flex;flex-direction:column;align-items:center;flex:1;padding:36px 22px 32px;text-align:center;}
+.axe-done-sets{font-family:'Bebas Neue',sans-serif;font-size:80px;line-height:1;color:var(--axeGlow);}
+.axe-done-label{font-size:14px;color:var(--muted);letter-spacing:3px;margin-bottom:4px;}
+.axe-done-title{font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;margin:8px 0 4px;}
+.axe-done-sub{font-size:14px;color:var(--muted);margin-bottom:28px;}
+.axe-done-chip{display:inline-block;font-size:13px;padding:6px 18px;border-radius:20px;border:1.5px solid var(--axe);color:var(--axeGlow);margin:0 4px 8px;}
+.axe-done-save{width:100%;padding:18px;border-radius:16px;background:var(--axe);font-family:'DM Sans',sans-serif;font-weight:700;font-size:17px;color:#fff;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.axe-done-skip{width:100%;padding:14px;border-radius:16px;background:var(--bgCard);border:1.5px solid var(--border);font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;color:var(--muted);}
+
+@keyframes axe-pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+.axe-rest-pulse{animation:axe-pulse 1.4s ease infinite;}
+
+/* ── PROGRAMS PAGE ── */
+.prog-page{flex:1;overflow-y:auto;padding-bottom:8px;}
+.prog-header{padding:32px 24px 8px;}
+.prog-header-title{font-family:'Bebas Neue',sans-serif;font-size:40px;line-height:1;}
+.prog-header-sub{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.55;}
+
+/* Sezione generica */
+.prog-section{padding:0 18px 4px;}
+.prog-section-label{font-size:11px;letter-spacing:3px;color:var(--muted);margin-bottom:10px;padding-top:14px;}
+
+/* Suggestion card */
+.prog-suggest-card{background:linear-gradient(135deg,#0A0A1F,#0F1930);border:1.5px solid #2A3A6A;border-radius:18px;padding:18px;}
+.prog-suggest-title{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#7CB3FF;margin-bottom:10px;}
+.prog-suggest-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.prog-day-chip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px solid;}
+.prog-suggest-note{font-size:12px;color:var(--muted);line-height:1.6;margin-top:6px;}
+
+/* Microciclo cards */
+.micro-card{background:var(--bgCard);border:1.5px solid var(--border);border-radius:16px;padding:16px;margin-bottom:10px;}
+.micro-card.active-prog{border-color:#00BFA5;background:#001A10;}
+.micro-card-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.micro-card-emoji{font-size:28px;}
+.micro-card-title{font-family:'Bebas Neue',sans-serif;font-size:20px;line-height:1;}
+.micro-card-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.micro-week{display:flex;gap:4px;margin-bottom:10px;}
+.micro-day-box{flex:1;border-radius:8px;padding:6px 4px;text-align:center;border:1.5px solid var(--border);}
+.micro-day-name{font-size:9px;color:var(--muted);letter-spacing:1px;}
+.micro-day-act{font-size:11px;font-weight:700;margin-top:2px;}
+.micro-activate-btn{width:100%;padding:11px;border-radius:12px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;}
+
+/* Macrociclo */
+.macro-card{background:var(--bgCard);border:1.5px solid var(--border);border-radius:16px;padding:16px;margin-bottom:10px;}
+.macro-card.active-prog{border-color:#FFC107;background:#1A1200;}
+.macro-card-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.macro-weeks{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+.macro-week-row{display:flex;gap:6px;align-items:center;}
+.macro-week-label{font-size:10px;letter-spacing:1px;color:var(--muted);width:36px;flex-shrink:0;}
+.macro-week-tags{display:flex;gap:4px;flex-wrap:wrap;}
+.macro-tag{font-size:10px;padding:3px 8px;border-radius:6px;font-weight:700;}
+
+/* Mobilità warm-up */
+.mob-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.mob-card{background:var(--bgCard);border:1.5px solid var(--border);border-radius:12px;padding:12px;}
+.mob-emoji{font-size:24px;margin-bottom:4px;}
+.mob-name{font-size:13px;font-weight:700;margin-bottom:2px;}
+.mob-sets{font-size:11px;color:var(--muted);margin-bottom:6px;}
+.mob-cue{font-size:11px;color:var(--muted);line-height:1.4;margin-bottom:6px;}
+.mob-yt{font-size:11px;font-weight:700;color:var(--axeGlow);border:1px solid var(--axe);border-radius:6px;padding:4px 8px;display:inline-block;}
+
+/* Active program banner on home */
+.active-prog-banner{background:linear-gradient(135deg,#001A10,#001520);border:1.5px solid #00BFA5;border-radius:16px;margin:0 18px 14px;padding:14px 16px;}
+.apb-label{font-size:10px;letter-spacing:2px;color:#00BFA5;margin-bottom:4px;}
+.apb-name{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text);margin-bottom:8px;}
+.apb-days{display:flex;gap:6px;flex-wrap:wrap;}
+.apb-day{font-size:11px;padding:4px 10px;border-radius:10px;font-weight:700;border:1.5px solid;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="sound-hint">🔊 Tocca Start per attivare l'audio</div>
+
+<script>
+// ── AUDIO ENGINE ───────────────────────────────────────────────────────────────
+let audioCtx=null,audioUnlocked=false;
+function getAudioCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function unlockAudio(){
+  if(audioUnlocked)return;
+  try{
+    const ctx=getAudioCtx();
+    const buf=ctx.createBuffer(1,1,22050);
+    const src=ctx.createBufferSource();
+    src.buffer=buf;src.connect(ctx.destination);src.start(0);
+    if(ctx.state==='suspended')ctx.resume();
+    audioUnlocked=true;
+    document.getElementById('sound-hint').classList.remove('show');
+  }catch(e){}
+}
+document.addEventListener('touchstart',unlockAudio,{once:true});
+document.addEventListener('click',unlockAudio,{once:true});
+
+function beep(freq,dur,vol=0.5,type='sine'){
+  try{
+    const ctx=getAudioCtx();
+    if(ctx.state==='suspended')ctx.resume();
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.type=type;
+    osc.frequency.setValueAtTime(freq,ctx.currentTime);
+    gain.gain.setValueAtTime(vol,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dur);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime+dur+0.01);
+  }catch(e){}
+}
+function beepTick(){beep(900,0.11,0.65,'sine');if(navigator.vibrate)navigator.vibrate(55);}
+function beepEnd(){
+  beep(440,0.14,0.7,'square');
+  setTimeout(()=>beep(700,0.4,0.85,'sine'),160);
+  if(navigator.vibrate)navigator.vibrate([120,70,280]);
+}
+// Beep inizio set AXE: doppio tono ascendente
+function beepAxeGo(){
+  beep(500,0.07,0.7,'square');
+  setTimeout(()=>beep(800,0.18,0.9,'sine'),80);
+  if(navigator.vibrate)navigator.vibrate([60,30,120]);
+}
+// Beep fine set AXE / inizio rest: tono discendente
+function beepAxeRest(){
+  beep(700,0.12,0.6,'sine');
+  setTimeout(()=>beep(350,0.3,0.5,'sine'),130);
+  if(navigator.vibrate)navigator.vibrate([40]);
+}
+// Beep fine sessione AXE: fanfara
+function beepAxeDone(){
+  beep(523,0.1,0.8,'sine');
+  setTimeout(()=>beep(659,0.1,0.8,'sine'),120);
+  setTimeout(()=>beep(784,0.1,0.8,'sine'),240);
+  setTimeout(()=>beep(1047,0.5,0.9,'sine'),360);
+  if(navigator.vibrate)navigator.vibrate([100,60,100,60,300]);
+}
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const EXERCISES={
+  "KB Swing":          {reps:"15–16 rip",yt:"https://www.youtube.com/results?search_query=kettlebell+swing+tutorial+form",cue:"Anca esplosiva, schiena dritta"},
+  "Push-up":           {reps:"10–12 rip",yt:"https://www.youtube.com/results?search_query=push+up+perfect+form+tutorial",cue:"Core stabile, corpo rigido"},
+  "Goblet Squat":      {reps:"12–15 rip",yt:"https://www.youtube.com/results?search_query=goblet+squat+kettlebell+tutorial",cue:"Ginocchia fuori, schiena verticale"},
+  "Rest":              {reps:"Recupero",yt:null,cue:"Respira, preparati al prossimo minuto"},
+  "Clean + Press":     {reps:"8–10 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+clean+press+tutorial",cue:"Clean pulito, press verticale"},
+  "Reverse Lunge":     {reps:"10 rip/lato",yt:"https://www.youtube.com/results?search_query=reverse+lunge+rack+position+kettlebell",cue:"Ginocchio non tocca il suolo"},
+  "One Arm Swing":     {reps:"12 rip/lato",yt:"https://www.youtube.com/results?search_query=one+arm+kettlebell+swing+tutorial",cue:"Stesso pattern del bimanuale"},
+  "Plank Shoulder Tap":{reps:"16 rip totali",yt:"https://www.youtube.com/results?search_query=plank+shoulder+tap+tutorial",cue:"Bacino stabile, niente rotazione"},
+  "Clean":             {reps:"× lato SX → DX",yt:"https://www.youtube.com/results?search_query=kettlebell+clean+tutorial",cue:"Porta il KB in rack — poi squat — poi press. Non posare!"},
+  "Front Squat":       {reps:"da posizione rack",yt:"https://www.youtube.com/results?search_query=kettlebell+front+squat+tutorial",cue:"KB già in rack dal clean — squat profondo, ginocchia fuori"},
+  "Push Press":        {reps:"poi cambia lato",yt:"https://www.youtube.com/results?search_query=kettlebell+push+press+tutorial",cue:"Dip & drive dal rack — lockout completo — poi ripeti DX"},
+  "AMRAP 6'":          {reps:"Max round",yt:null,cue:"Intensità controllata, tecnica prima di tutto"},
+};
+
+function buildDayA(){
+  const seq=[];
+  for(let r=1;r<=6;r++)["KB Swing","Push-up","Goblet Squat","Rest"].forEach(n=>seq.push({name:n,round:r,totalRounds:6,timerSec:60,type:"emom"}));
+  return seq;
+}
+function buildDayB(){
+  const seq=[];
+  for(let r=1;r<=5;r++)["Clean + Press","Reverse Lunge","One Arm Swing","Plank Shoulder Tap"].forEach(n=>{
+    seq.push({name:n,round:r,totalRounds:5,timerSec:40,type:"work"});
+    seq.push({name:"Rest",round:r,totalRounds:5,timerSec:20,type:"rest"});
+  });
+  return seq;
+}
+function buildDayC(){
+  const LADDER=[1,2,3,4,5,4,3,2,1];
+  const seq=[];
+  for(let c=1;c<=2;c++)LADDER.forEach(n=>{
+    seq.push({name:"Clean",repsOverride:`${n} rip / lato`,round:c,totalRounds:2,timerSec:null,type:"ladder",ladderN:n});
+    seq.push({name:"Front Squat",repsOverride:`${n} rip (in rack)`,round:c,totalRounds:2,timerSec:null,type:"ladder",ladderN:n});
+    seq.push({name:"Push Press",repsOverride:`${n} rip → cambia lato`,round:c,totalRounds:2,timerSec:null,type:"ladder",ladderN:n});
+  });
+  seq.push({name:"AMRAP 6'",round:1,totalRounds:1,timerSec:360,type:"amrap",isAmrap:true});
+  return seq;
+}
+
+const DAYS={
+  A:{label:"Giorno A",subtitle:"EMOM 24'",focus:"Potenza + Tecnica",color:"#FF5722",emoji:"⚡",seq:buildDayA(),totalMin:24},
+  B:{label:"Giorno B",subtitle:"HIIT 40/20",focus:"Condizionamento Metabolico",color:"#FFC107",emoji:"🔥",seq:buildDayB(),totalMin:20},
+  C:{label:"Giorno C",subtitle:"Ladder + AMRAP",focus:"Densità + Coordinazione",color:"#00BFA5",emoji:"🎯",seq:buildDayC(),totalMin:28},
+};
+
+// ── AXE EXERCISES ─────────────────────────────────────────────────────────────
+const AXE_EX={
+  swing:  {label:"KB Swing Bimanuale", emoji:"🔄", level:"⭐ Inizia qui",
+            cue:"Anca esplosiva · schiena neutra · KB proiettato in avanti",
+            yt:"https://www.youtube.com/results?search_query=kettlebell+swing+hardstyle+tutorial+Pavel"},
+  swing1: {label:"One Arm Swing",      emoji:"💪", level:"⭐⭐ Intermedio",
+            cue:"Stesso pattern del bimanuale · spalla packed · non ruotare il tronco",
+            yt:"https://www.youtube.com/results?search_query=one+arm+kettlebell+swing+hardstyle"},
+  clean:  {label:"KB Clean",           emoji:"🏋️", level:"⭐⭐ Intermedio",
+            cue:"Rack position precisa · gomito a corpo · zero oscillazione",
+            yt:"https://www.youtube.com/results?search_query=kettlebell+clean+technique+tutorial"},
+  snatch: {label:"KB Snatch",          emoji:"🚀", level:"⭐⭐⭐ Avanzato",
+            cue:"Traiettoria verticale · lockout completo · non battere il polso",
+            yt:"https://www.youtube.com/results?search_query=kettlebell+snatch+tutorial+technique"},
+  press:  {label:"KB Press",           emoji:"☝️", level:"⭐⭐ Intermedio",
+            cue:"Rack solido · press verticale · glutes tight · lockout duro",
+            yt:"https://www.youtube.com/results?search_query=kettlebell+military+press+tutorial"},
+  goblet: {label:"Goblet Squat",       emoji:"🏆", level:"⭐ Principiante",
+            cue:"Ginocchia fuori · talloni a terra · schiena verticale",
+            yt:"https://www.youtube.com/results?search_query=goblet+squat+kettlebell+tutorial"},
+};
+
+// ── MOBILITY EXERCISES ────────────────────────────────────────────────────────
+const MOBILITY_EX=[
+  {name:"Halo",emoji:"🌀",sets:"3×8/lato",
+   cue:"KB capovolto con ancia, cerchio stretto intorno alla testa, spalle basse",
+   yt:"https://www.youtube.com/results?search_query=kettlebell+halo+tutorial"},
+  {name:"Around the World",emoji:"🌍",sets:"3×6/lato",
+   cue:"Trasferimento fluido mano-mano, core stabile, ginocchia morbide",
+   yt:"https://www.youtube.com/results?search_query=kettlebell+around+the+world+tutorial"},
+  {name:"Figure 8",emoji:"8️⃣",sets:"3×8",
+   cue:"Piegamento anca non schiena, KB passa tra le gambe in traiettoria bassa",
+   yt:"https://www.youtube.com/results?search_query=kettlebell+figure+8+tutorial"},
+  {name:"Side Swing",emoji:"↔️",sets:"3×8/lato",
+   cue:"Swing laterale con rotazione del tronco controllata, piedi larghi",
+   yt:"https://www.youtube.com/results?search_query=kettlebell+side+swing+tutorial"},
+  {name:"Windmill",emoji:"🌬️",sets:"3×5/lato",
+   cue:"Braccio alto lockout, occhi sul KB, piega sull'anca non sulla schiena",
+   yt:"https://www.youtube.com/results?search_query=kettlebell+windmill+tutorial"},
+  {name:"Hip Hinge Flow",emoji:"🔄",sets:"2×10",
+   cue:"Cerniera sull'anca pura, schiena neutra, KB scorre lungo le cosce",
+   yt:"https://www.youtube.com/results?search_query=hip+hinge+kettlebell+drill"},
+];
+
+// ── PROGRAMS DATA ─────────────────────────────────────────────────────────────
+// Giorni: 0=Dom,1=Lun,2=Mar,3=Mer,4=Gio,5=Ven,6=Sab
+const MICROCYCLES=[
+  {
+    id:"abc-only",
+    emoji:"⚡",color:"#FF5722",
+    title:"Solo A+B+C",
+    subtitle:"Tecnica e forza · 3 gg/sett",
+    desc:"Il programma base. Costruisce tecnica, forza funzionale e capacità metabolica senza AGT. Ideale per i primi 4-6 settimane.",
+    days:[
+      {d:1,label:"Lun",act:"A",col:"#FF5722"},{d:3,label:"Mer",act:"B",col:"#FFC107"},
+      {d:6,label:"Sab",act:"C",col:"#00BFA5"},{d:0,label:"Dom",act:"—",col:"#1E2A35"},
+      {d:2,label:"Mar",act:"—",col:"#1E2A35"},{d:4,label:"Gio",act:"—",col:"#1E2A35"},
+      {d:5,label:"Ven",act:"—",col:"#1E2A35"},
+    ]
+  },
+  {
+    id:"axe-only",
+    emoji:"🪓",color:"#9C27B0",
+    title:"Solo AXE",
+    subtitle:"AGT puro · 2 gg/sett",
+    desc:"Focus esclusivo sull'Anti-Glycolytic Training. Ottimo per costruire la base aerobica senza interferire con il recupero. Almeno 48h tra sessioni.",
+    days:[
+      {d:1,label:"Lun",act:"AXE",col:"#9C27B0"},{d:4,label:"Gio",act:"AXE",col:"#9C27B0"},
+      {d:0,label:"Dom",act:"—",col:"#1E2A35"},{d:2,label:"Mar",act:"—",col:"#1E2A35"},
+      {d:3,label:"Mer",act:"—",col:"#1E2A35"},{d:5,label:"Ven",act:"—",col:"#1E2A35"},
+      {d:6,label:"Sab",act:"—",col:"#1E2A35"},
+    ]
+  },
+  {
+    id:"mix-balanced",
+    emoji:"⚖️",color:"#2196F3",
+    title:"Mix Bilanciato",
+    subtitle:"AXE + A+B · 4 gg/sett",
+    desc:"Il mix consigliato da Pavel. AXE costruisce il motore aerobico, i giorni tecnici mantengono forza e coordinazione. Non si sovraffaticano gli stessi pattern.",
+    days:[
+      {d:1,label:"Lun",act:"AXE",col:"#9C27B0"},{d:3,label:"Mer",act:"A",col:"#FF5722"},
+      {d:4,label:"Gio",act:"AXE",col:"#9C27B0"},{d:6,label:"Sab",act:"B",col:"#FFC107"},
+      {d:0,label:"Dom",act:"—",col:"#1E2A35"},{d:2,label:"Mar",act:"—",col:"#1E2A35"},
+      {d:5,label:"Ven",act:"—",col:"#1E2A35"},
+    ]
+  },
+  {
+    id:"mix-intensive",
+    emoji:"🔥",color:"#EF5350",
+    title:"Mix Intensivo",
+    subtitle:"A+B+C+AXE · 5 gg/sett",
+    desc:"Per chi ha già una base solida. Attenzione: il Giorno B (HIIT) può interferire con l'adattamento AGT — monitora la HR e il talk test.",
+    days:[
+      {d:1,label:"Lun",act:"A",col:"#FF5722"},{d:2,label:"Mar",act:"AXE",col:"#9C27B0"},
+      {d:4,label:"Gio",act:"B",col:"#FFC107"},{d:5,label:"Ven",act:"AXE",col:"#9C27B0"},
+      {d:6,label:"Sab",act:"C",col:"#00BFA5"},{d:0,label:"Dom",act:"—",col:"#1E2A35"},
+      {d:3,label:"Mer",act:"—",col:"#1E2A35"},
+    ]
+  },
+];
+
+const MACROCYCLES=[
+  {
+    id:"macro-fondamenta",
+    emoji:"🏗️",color:"#FF5722",
+    title:"Fondamenta",
+    subtitle:"4 settimane · Solo A+B+C",
+    desc:"Costruisce tecnica solida su tutti e 3 i pattern prima di aggiungere volume o AXE. Il prerequisito per tutto il resto.",
+    weeks:[
+      {label:"Sett 1",tags:[{t:"A",c:"#FF5722"},{t:"B",c:"#FFC107"},{t:"C",c:"#00BFA5"}],note:"Tecnica prima di tutto"},
+      {label:"Sett 2",tags:[{t:"A",c:"#FF5722"},{t:"B",c:"#FFC107"},{t:"C",c:"#00BFA5"}],note:"Consolida il pattern"},
+      {label:"Sett 3",tags:[{t:"A+",c:"#FF5722"},{t:"B",c:"#FFC107"},{t:"C+",c:"#00BFA5"}],note:"Aumenta l'intensità"},
+      {label:"Sett 4",tags:[{t:"A",c:"#FF5722"},{t:"REST",c:"#607080"},{t:"C",c:"#00BFA5"}],note:"Deload — meno volume"},
+    ]
+  },
+  {
+    id:"macro-agt-base",
+    emoji:"🌱",color:"#9C27B0",
+    title:"AGT Base",
+    subtitle:"4 settimane · Introduce AXE",
+    desc:"Introduce progressivamente il protocollo AXE mantenendo i giorni tecnici. Ideale dopo aver completato Fondamenta.",
+    weeks:[
+      {label:"Sett 1",tags:[{t:"AXE×2",c:"#9C27B0"},{t:"A",c:"#FF5722"},{t:"B",c:"#FFC107"}],note:"10 set AXE · 4 reps"},
+      {label:"Sett 2",tags:[{t:"AXE×2",c:"#9C27B0"},{t:"A",c:"#FF5722"},{t:"C",c:"#00BFA5"}],note:"14 set AXE · 4 reps"},
+      {label:"Sett 3",tags:[{t:"AXE×2",c:"#9C27B0"},{t:"A",c:"#FF5722"},{t:"B",c:"#FFC107"}],note:"18 set AXE · 4 reps"},
+      {label:"Sett 4",tags:[{t:"AXE×1",c:"#9C27B0"},{t:"A",c:"#FF5722"},{t:"REST",c:"#607080"}],note:"Deload — consolida"},
+    ]
+  },
+  {
+    id:"macro-agt-adv",
+    emoji:"🚀",color:"#FFC107",
+    title:"AGT Avanzato",
+    subtitle:"4 settimane · AXE dominante",
+    desc:"AXE come focus principale. I giorni A e C mantengono tecnica e coordinazione. Il Giorno B viene rimosso per non compromettere l'adattamento AGT.",
+    weeks:[
+      {label:"Sett 1",tags:[{t:"AXE×3",c:"#9C27B0"},{t:"A",c:"#FF5722"},{t:"C",c:"#00BFA5"}],note:"22 set AXE · talk test"},
+      {label:"Sett 2",tags:[{t:"AXE×3",c:"#9C27B0"},{t:"A",c:"#FF5722"},{t:"C",c:"#00BFA5"}],note:"26 set AXE · 4 reps"},
+      {label:"Sett 3",tags:[{t:"AXE×3",c:"#9C27B0"},{t:"A",c:"#FF5722"},{t:"C",c:"#00BFA5"}],note:"30 set AXE → passa a 6 reps"},
+      {label:"Sett 4",tags:[{t:"AXE×2",c:"#9C27B0"},{t:"A",c:"#FF5722"},{t:"REST",c:"#607080"}],note:"Deload e valuta"},
+    ]
+  },
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let state={
+  tab:"home",
+  dayKey:null,stepIdx:0,
+  remaining:0,timerRunning:false,startTime:null,
+  workoutMins:0,workoutSteps:0,
+  logForm:{feeling:null,hrAvg:"",hrMax:"",weight:"10",talkTest:null,notes:""},
+  axe:{
+    repsPerSet:4,restSec:60,exercise:"swing",
+    phase:"idle",setsDone:0,targetSets:20,
+    sessionRunning:false,sessionStart:null,restRemaining:0,
+    talkAsked:false,talkAnswered:null,
+  },
+  // persistent
+  history:JSON.parse(localStorage.getItem("kb-history-v2")||"[]"),
+  axeHistory:JSON.parse(localStorage.getItem("kb-axe-history")||"[]"),
+  axeProgress:JSON.parse(localStorage.getItem("kb-axe-progress")||JSON.stringify({
+    repsPerSet:4,currentSets:0,stepRPE:8,phase:"fase 1",
+  })),
+  activeProgram:JSON.parse(localStorage.getItem("kb-active-program")||"null"),
+};
+let timerInterval=null;
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function fmtTime(s){return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;}
+function getTodaySuggested(){const d=new Date().getDay();return d===1?"A":d===3?"B":d===6?"C":null;}
+function dayLabel(){return["Dom","Lun","Mar","Mer","Gio","Ven","Sab"][new Date().getDay()];}
+function saveHistory(){localStorage.setItem("kb-history-v2",JSON.stringify(state.history));}
+function saveAxeHistory(){localStorage.setItem("kb-axe-history",JSON.stringify(state.axeHistory));}
+function saveAxeProgress(){localStorage.setItem("kb-axe-progress",JSON.stringify(state.axeProgress));}
+function saveActiveProgram(){localStorage.setItem("kb-active-program",JSON.stringify(state.activeProgram));}
+function dayColor(k){return DAYS[k]?.color||"#FF5722";}
+
+function ringHTML(total,remaining,color,countdown=false){
+  const r=68,cx=80,cy=80,circ=2*Math.PI*r;
+  const pct=total>0?remaining/total:1;
+  const dash=circ*pct;
+  const col=countdown?"#EF5350":color;
+  const pulse=countdown?'class="countdown-pulse"':'';
+  const sub=countdown?`<text x="${cx}" y="${cy+34}" text-anchor="middle" fill="#EF5350" font-family="'Bebas Neue',sans-serif" font-size="14" letter-spacing="3">PRONTI!</text>`:'';
+  return `<svg width="160" height="160" ${pulse} style="filter:drop-shadow(0 0 18px ${col}55)">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1E2A35" stroke-width="9"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="9"
+      stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${circ*0.25}"
+      stroke-linecap="round" style="transition:stroke-dasharray 0.45s ease"/>
+    <text x="${cx}" y="${cy+14}" text-anchor="middle" fill="${countdown?'#EF5350':'#F0F4F8'}"
+      font-family="'Bebas Neue',sans-serif" font-size="40">${fmtTime(remaining)}</text>
+    ${sub}
+  </svg>`;
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+function navHTML(active){
+  const tabs=[
+    {id:"home",icon:"🏠",label:"HOME"},
+    {id:"axe",icon:"🪓",label:"AXE"},
+    {id:"programs",icon:"📋",label:"PROGRAMMI"},
+    {id:"log",icon:"📊",label:"STATS"},
+  ];
+  return `<nav class="bottom-nav">${tabs.map(t=>`
+    <button class="nav-btn ${active===t.id?'active':''}" onclick="switchTab('${t.id}')">
+      <span class="ni">${t.icon}</span>${t.label}
+    </button>`).join("")}</nav>`;
+}
+function switchTab(t){state.tab=t;render();}
+
+// ── RENDER HOME ───────────────────────────────────────────────────────────────
+function renderHome(){
+  const suggested=getTodaySuggested();
+  const cards=Object.entries(DAYS).map(([key,day])=>{
+    const ap=state.activeProgram;
+    const isToday=suggested===key;
+    // Evidenzia giorno suggerito dal programma attivo
+    const todayDow=new Date().getDay();
+    const apToday=ap?ap.days.find(d=>d.d===todayDow&&d.act!=="—"):null;
+    const isApToday=ap&&apToday&&(apToday.act===key||apToday.act===key+"+");
+    const badge=isToday||isApToday?`<div class="today-badge" style="background:${day.color}">OGGI</div>`:"";
+    const cardShadow=isToday||isApToday?('0 0 28px '+day.color+'30'):'none';
+    return `<button class="day-card"
+      style="border-color:${isToday||isApToday?day.color:'#1E2A35'};box-shadow:${cardShadow}"
+      onclick="startWorkout('${key}')">
+      <div class="day-emoji">${day.emoji}</div>
+      <div class="day-card-inner">
+        <div class="day-name">${day.label} — ${day.subtitle}</div>
+        <div class="day-focus" style="color:${day.color}">${day.focus}</div>
+        <div class="day-dur">⏱ ~${day.totalMin} min</div>
+      </div>
+      ${badge}
+    </button>`;
+  }).join("");
+
+  // Banner programma attivo
+  let apBanner="";
+  if(state.activeProgram){
+    const ap=state.activeProgram;
+    const todayDow=new Date().getDay();
+    const DAYS_IT=["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
+    const chips=ap.days.filter(d=>d.act!=="—").map(d=>`
+      <div class="apb-day" style="border-color:${d.col};color:${d.col};background:${d.col}18;">
+        ${DAYS_IT[d.d]} ${d.act}
+      </div>`).join("");
+    apBanner=`<div class="active-prog-banner">
+      <div class="apb-label">PROGRAMMA ATTIVO</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="apb-name">${ap.emoji} ${ap.title}</div>
+        <button onclick="deactivateProgram()" style="font-size:11px;color:#EF5350;background:none;padding:4px 8px;">✕ Disattiva</button>
+      </div>
+      <div class="apb-days">${chips}</div>
+    </div>`;
+  }
+
+  let recentHTML="";
+  // Unisci storico normale e AXE, ordina per data più recente (index come proxy)
+  const allRecent=[
+    ...state.history.map(h=>({...h,type:"std"})),
+    ...state.axeHistory.map(h=>({...h,type:"axe",day:"AXE"})),
+  ].slice(-5).reverse();
+  if(allRecent.length>0){
+    const rows=allRecent.map(h=>{
+      const col=h.type==="axe"?"#9C27B0":dayColor(h.day);
+      const label=h.type==="axe"
+        ?`AXE · ${h.sets} set · ${h.reps} reps`
+        :`Giorno ${h.day}`;
+      const info=h.type==="axe"
+        ?`${h.date}${h.duration?' · '+h.duration+"'":''}${h.hrAvg?' · ❤️'+h.hrAvg:''}`
+        :`${h.date}${h.duration?' · '+h.duration+"'":''}${h.weight?' · ⚖️'+h.weight+'kg':''}`;
+      return `<div class="recent-row">
+        <span class="recent-day" style="color:${col}">${label}</span>
+        <span class="recent-info">${info}</span>
+      </div>`;
+    }).join("");
+    recentHTML=`<div class="home-recent"><div class="recent-label">ULTIMI ALLENAMENTI</div>${rows}</div>`;
+  }
+
+  return `<div class="screen">
+    <div class="home-wrap">
+      <div class="home-header">
+        <div class="home-label">KETTLEBELL TRAINER</div>
+        <div class="home-title">SCEGLI<br>IL TUO GIORNO</div>
+        <div class="home-sub">${dayLabel()} · 10 kg KB</div>
+      </div>
+      ${apBanner}
+      <div class="day-cards">${cards}</div>
+      ${recentHTML}
+    </div>
+    ${navHTML("home")}
+  </div>`;
+}
+
+// ── RENDER WORKOUT ────────────────────────────────────────────────────────────
+function renderWorkout(){
+  const day=DAYS[state.dayKey],seq=day.seq,step=seq[state.stepIdx];
+  const ex=EXERCISES[step.name]||{};
+  const isRest=step.type==="rest"||step.name==="Rest";
+  const isAmrap=!!step.isAmrap;
+  const hasTimer=step.timerSec!=null;
+  const isLast=state.stepIdx>=seq.length-1;
+  const countdown=hasTimer&&state.remaining<=3&&state.remaining>0&&state.timerRunning;
+  const accentColor=isRest?"#1565C0":isAmrap?"#FFC107":day.color;
+  const repsLabel=step.repsOverride||ex.reps||"—";
+  const progress=(state.stepIdx/seq.length*100).toFixed(1);
+  const exFontSize=step.name.length>14?"26px":step.name.length>10?"32px":"44px";
+
+  const timerHTML=hasTimer
+    ?ringHTML(step.timerSec,state.remaining,accentColor,countdown)
+    :`<div class="no-timer-circle">✋</div>`;
+
+  const amrapCard=isAmrap?`<div class="amrap-card">
+    <div class="amrap-title">Schema AMRAP:</div>
+    <div class="amrap-schema">15 KB Swing + 12 Push-up</div>
+    <div class="amrap-note">Conteggia i round completati</div>
+  </div>`:"";
+
+  const startLabel=state.timerRunning?"⏸ Pausa":(state.remaining===step.timerSec?"▶ Start":"▶ Riprendi");
+  const timerBtns=hasTimer?`<div class="timer-btns">
+    <button class="btn-main" id="btn-startstop" style="background:${state.timerRunning?'#CC4419':accentColor}" onclick="toggleTimer()">${startLabel}</button>
+    <button class="btn-reset" onclick="resetTimer()">↺</button>
+  </div>`:"";
+
+  const videoBtn=ex.yt?`<a href="${ex.yt}" target="_blank" class="btn-video">▶️ Video</a>`:"";
+  const nextStyle=isLast?`background:#00BFA5;border-color:#00BFA5;color:#000;`:`background:#0F1419;border-color:#1E2A35;`;
+
+  // Banner esercizio successivo
+  const nextStep_=seq[state.stepIdx+1];
+  const nextBanner=(!isLast&&nextStep_)?`
+    <div style="margin:0 18px 10px;padding:10px 14px;background:#0A0F12;border:1px solid #1E2A35;border-radius:12px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:10px;letter-spacing:2px;color:#607080;flex-shrink:0;">PROSSIMO</span>
+      <span style="font-size:14px;font-weight:700;color:#607080;">${nextStep_.name.toUpperCase()}</span>
+      ${nextStep_.repsOverride?'<span style="font-size:12px;color:#3A4A55;margin-left:auto;">'+nextStep_.repsOverride+'</span>'
+        :EXERCISES[nextStep_.name]?'<span style="font-size:12px;color:#3A4A55;margin-left:auto;">'+EXERCISES[nextStep_.name].reps+'</span>':""}
+    </div>`:"";
+
+  let ladderHTML="";
+  if(step.type==="ladder"&&step.name==="Clean"){
+    const pills=[1,2,3,4,5,4,3,2,1].map(n=>{
+      const a=n===step.ladderN;
+      return `<div class="ladder-pill" style="background:${a?day.color:'#0F1419'};border-color:${a?day.color:'#1E2A35'};color:${a?'#000':'#607080'}">${n}</div>`;
+    }).join("");
+    ladderHTML=`<div class="ladder-wrap">
+      <div class="ladder-label">SEQUENZA COMPLESSO</div>
+      <div style="background:#0F1419;border:1px solid #1E2A35;border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:13px;line-height:1.7;color:#F0F4F8;">
+        <span style="color:${day.color};font-family:'Bebas Neue',sans-serif;font-size:15px;">SX:</span>
+        Clean → Front Squat → Push Press (senza posare)<br>
+        <span style="color:${day.color};font-family:'Bebas Neue',sans-serif;font-size:15px;">DX:</span>
+        Clean → Front Squat → Push Press
+      </div>
+      <div class="ladder-label" style="margin-top:4px;">SCALA</div>
+      <div class="ladder-pills">${pills}</div>
+    </div>`;
+  }
+
+  return `<div class="screen">
+    <div class="topbar">
+      <button class="back-btn" onclick="exitWorkout()">‹</button>
+      <div class="topbar-center">
+        <div class="topbar-title" style="color:${accentColor}">${day.label} — ${day.subtitle}</div>
+        <div class="topbar-step">Step ${state.stepIdx+1} / ${seq.length}</div>
+      </div>
+      <div class="topbar-round">Round ${step.round}/${step.totalRounds}</div>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" style="width:${progress}%;background:${accentColor}"></div></div>
+    <div class="ex-name-wrap">
+      <div class="ex-name" style="font-size:${exFontSize};color:${isRest?'#607080':'#F0F4F8'}">${step.name.toUpperCase()}</div>
+      ${isAmrap?'<div class="amrap-sub">AS MANY ROUNDS AS POSSIBLE</div>':""}
+    </div>
+    <div class="timer-wrap" id="timer-wrap">${timerHTML}</div>
+    <div class="reps-wrap">
+      <div class="reps-label" id="reps-label" style="color:${countdown?'#EF5350':accentColor}">${repsLabel}</div>
+      ${ex.cue?`<div class="cue-text">"${ex.cue}"</div>`:""}
+    </div>
+    ${amrapCard}
+    ${timerBtns}
+    ${nextBanner}
+    <div class="action-btns">
+      ${videoBtn}
+      <button class="btn-next" style="${nextStyle}" onclick="nextStep()">${isLast?"🏁 Fine!":"Avanti →"}</button>
+    </div>
+    ${ladderHTML}
+  </div>`;
+}
+
+// ── RENDER DONE (con form log) ────────────────────────────────────────────────
+function renderDone(){
+  const day=DAYS[state.dayKey];
+  const f=state.logForm;
+
+  const feelingOpts=[
+    {v:"😫",label:"Pesante"},
+    {v:"😐",label:"Normale"},
+    {v:"💪",label:"Bene"},
+    {v:"🔥",label:"Ottimo"},
+  ];
+  const feelPills=feelingOpts.map(o=>`
+    <div class="feel-pill ${f.feeling===o.v?'sel':''}" onclick="setLogField('feeling','${o.v}')">
+      ${o.v}<span>${o.label}</span>
+    </div>`).join("");
+
+  const talkOpts=[
+    {v:"ok",label:"✅ Test OK",cls:"sel-ok"},
+    {v:"fail",label:"❌ Affannato",cls:"sel-no"},
+    {v:"na",label:"— Non fatto",cls:""},
+  ];
+  const talkPills=talkOpts.map(o=>`
+    <div class="talk-pill ${f.talkTest===o.v?o.cls:''}" onclick="setLogField('talkTest','${o.v}')">${o.label}</div>`).join("");
+
+  return `<div class="screen">
+    <div class="done-screen">
+      <div class="done-emoji">🏆</div>
+      <div class="done-title">COMPLETATO!</div>
+      <div class="done-sub">Giorno ${state.dayKey} · ${state.workoutMins} min · ${state.workoutSteps} step</div>
+
+      <div class="log-form">
+
+        <div>
+          <div class="log-section-label">SENSAZIONE</div>
+          <div class="feel-pills">${feelPills}</div>
+        </div>
+
+        <div>
+          <div class="log-section-label">TEST DEL PARLATO (fine sessione)</div>
+          <div class="talk-pills">${talkPills}</div>
+        </div>
+
+        <div>
+          <div class="log-section-label">FREQUENZA CARDIACA (dall'Amazfit)</div>
+          <div class="log-row">
+            <div class="log-field">
+              <input class="log-input" type="number" placeholder="Media bpm" value="${f.hrAvg}"
+                oninput="setLogField('hrAvg',this.value)" inputmode="numeric"/>
+            </div>
+            <div class="log-field">
+              <input class="log-input" type="number" placeholder="Max bpm" value="${f.hrMax}"
+                oninput="setLogField('hrMax',this.value)" inputmode="numeric"/>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="log-section-label">PESO KB USATO (kg)</div>
+          <input class="log-input" type="number" placeholder="10" value="${f.weight}"
+            oninput="setLogField('weight',this.value)" inputmode="decimal" step="0.5"/>
+        </div>
+
+        <div>
+          <div class="log-section-label">NOTE (opzionale)</div>
+          <input class="log-input" type="text" placeholder="Es. spalla ok, fatica sul C+P..."
+            value="${f.notes}" oninput="setLogField('notes',this.value)"/>
+        </div>
+
+      </div>
+
+      <button class="btn-save" style="background:${day.color}" onclick="saveSession()">💾 Salva Allenamento</button>
+      <button class="btn-skip" onclick="skipSave()">Salta e vai alla home</button>
+    </div>
+  </div>`;
+}
+
+// ── RENDER LOG ────────────────────────────────────────────────────────────────
+function renderLog(){
+  const hist=state.history;
+
+  // ── Calcola statistiche ──
+  // Frequenza settimanale (ultime 4 settimane)
+  const now=new Date();
+  function getWeekNum(dateStr){
+    // dateStr: "dd/mm/yyyy"
+    const [d,m,y]=dateStr.split("/").map(Number);
+    const dt=new Date(y,m-1,d);
+    const diff=(now-dt)/(1000*60*60*24*7);
+    return Math.floor(diff);
+  }
+  const weekCounts=[0,0,0,0]; // settimana corrente, -1, -2, -3
+  hist.forEach(h=>{
+    const w=getWeekNum(h.date);
+    if(w>=0&&w<4)weekCounts[w]++;
+  });
+  const weekLabels=["Questa","–1 sett","–2 sett","–3 sett"];
+  const maxWC=Math.max(...weekCounts,1);
+
+  // Distribuzione A/B/C
+  const dist={A:0,B:0,C:0};
+  hist.forEach(h=>{if(dist[h.day]!==undefined)dist[h.day]++;});
+  const total=hist.length||1;
+
+  // Trend HR media (ultime 8 sessioni con HR)
+  const hrData=hist.filter(h=>h.hrAvg).slice(-8);
+
+  // Progressione peso (ultime 8 sessioni con peso)
+  const wData=hist.filter(h=>h.weight).slice(-8);
+
+  // Stat generali
+  const avgDur=hist.length?Math.round(hist.reduce((s,h)=>s+(h.duration||0),0)/hist.length):0;
+  const lastWeight=wData.length?wData[wData.length-1].weight:"—";
+  const avgHR=hrData.length?Math.round(hrData.reduce((s,h)=>s+Number(h.hrAvg),0)/hrData.length):"—";
+
+  // ── Mini bar chart frequenza settimanale ──
+  const barColors=["#2196F3","#1565C0","#0D47A1","#0A2E6E"];
+  const weekBars=weekCounts.map((c,i)=>{
+    const h=c>0?Math.round((c/maxWC)*52)+4:4;
+    return `<div class="mini-bar-wrap">
+      <div class="mini-bar" style="height:${h}px;background:${barColors[i]};"></div>
+      <div class="mini-bar-lbl">${weekLabels[i]}<br><b style="color:#F0F4F8">${c}</b></div>
+    </div>`;
+  }).join("");
+
+  // ── Donut distribuzione ──
+  function describeArc(cx,cy,r,startAngle,endAngle){
+    const s={x:cx+r*Math.cos(startAngle),y:cy+r*Math.sin(startAngle)};
+    const e={x:cx+r*Math.cos(endAngle),y:cy+r*Math.sin(endAngle)};
+    const large=endAngle-startAngle>Math.PI?1:0;
+    return `M ${cx} ${cy} L ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y} Z`;
+  }
+  const dayColors={A:"#FF5722",B:"#FFC107",C:"#00BFA5"};
+  let angle=-Math.PI/2;
+  const slices=Object.entries(dist).filter(([,v])=>v>0).map(([k,v])=>{
+    const sweep=(v/total)*2*Math.PI;
+    const path=describeArc(44,44,36,angle,angle+sweep);
+    angle+=sweep;
+    return `<path d="${path}" fill="${dayColors[k]}"/>`;
+  }).join("");
+  const donutSVG=`<svg width="88" height="88" viewBox="0 0 88 88">
+    ${total>1?slices:`<circle cx="44" cy="44" r="36" fill="#1E2A35"/>`}
+    <circle cx="44" cy="44" r="22" fill="#080C0F"/>
+    <text x="44" y="48" text-anchor="middle" fill="#F0F4F8" font-family="'Bebas Neue',sans-serif" font-size="18">${hist.length}</text>
+  </svg>`;
+  const donutLegend=Object.entries(dist).map(([k,v])=>`
+    <div class="donut-leg-item">
+      <div class="donut-leg-dot" style="background:${dayColors[k]}"></div>
+      <span style="color:${dayColors[k]};font-weight:700">Giorno ${k}</span>
+      <span style="color:var(--muted);margin-left:auto">${v} · ${Math.round(v/total*100)}%</span>
+    </div>`).join("");
+
+  // ── HR trend SVG ──
+  let hrTrendHTML="";
+  if(hrData.length>=2){
+    const vals=hrData.map(h=>Number(h.hrAvg));
+    const mn=Math.min(...vals)-5,mx=Math.max(...vals)+5;
+    const W=300,H=60;
+    const pts=vals.map((v,i)=>{
+      const x=i/(vals.length-1)*W;
+      const y=H-((v-mn)/(mx-mn))*H;
+      return `${x},${y}`;
+    });
+    hrTrendHTML=`<div class="hr-chart">
+      <svg class="hr-line-svg" viewBox="0 0 300 60" preserveAspectRatio="none">
+        <polyline points="${pts.join(" ")}" fill="none" stroke="#EF5350" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        ${vals.map((v,i)=>{
+          const x=i/(vals.length-1)*W;
+          const y=H-((v-mn)/(mx-mn))*H;
+          return `<circle cx="${x}" cy="${y}" r="4" fill="#EF5350"/>
+            <text x="${x}" y="${y-8}" text-anchor="middle" fill="#EF5350" font-family="'DM Sans',sans-serif" font-size="9">${v}</text>`;
+        }).join("")}
+      </svg>
+    </div>`;
+  }
+
+  // ── Peso trend ──
+  let wTrendHTML="";
+  if(wData.length>=2){
+    const vals=wData.map(h=>Number(h.weight));
+    const mn=Math.min(...vals)-2,mx=Math.max(...vals)+2;
+    const W=300,H=60;
+    const pts=vals.map((v,i)=>{
+      const x=i/(vals.length-1)*W;
+      const y=H-((v-mn)/(mx-mn))*H;
+      return `${x},${y}`;
+    });
+    wTrendHTML=`<div class="hr-chart">
+      <svg class="hr-line-svg" viewBox="0 0 300 60" preserveAspectRatio="none">
+        <polyline points="${pts.join(" ")}" fill="none" stroke="#9C27B0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        ${vals.map((v,i)=>{
+          const x=i/(vals.length-1)*W;
+          const y=H-((v-mn)/(mx-mn))*H;
+          return `<circle cx="${x}" cy="${y}" r="4" fill="#9C27B0"/>
+            <text x="${x}" y="${y-8}" text-anchor="middle" fill="#CE93D8" font-family="'DM Sans',sans-serif" font-size="9">${v} kg</text>`;
+        }).join("")}
+      </svg>
+    </div>`;
+  }
+
+  // ── Lista sessioni ──
+  const feelLabel={
+    "😫":"😫 Pesante","😐":"😐 Normale","💪":"💪 Bene","🔥":"🔥 Ottimo"
+  };
+  const talkLabel={"ok":"✅ Parlato OK","fail":"❌ Affannato","na":"— Non testato"};
+
+  const sessionList=hist.length===0
+    ?`<div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-text">Nessun allenamento salvato.<br>Completa il primo workout<br>per iniziare a tracciare i progressi.</div>
+      </div>`
+    :hist.slice().reverse().map((h,ri)=>{
+        const i=hist.length-1-ri;
+        const chips=[];
+        if(h.weight)chips.push(`<span class="log-chip">⚖️ ${h.weight} kg</span>`);
+        if(h.hrAvg)chips.push(`<span class="log-chip" style="border-color:#EF535040;color:#EF5350">❤️ ${h.hrAvg} bpm avg</span>`);
+        if(h.hrMax)chips.push(`<span class="log-chip" style="border-color:#EF535040;color:#FF8A80">🔺 ${h.hrMax} bpm max</span>`);
+        if(h.duration)chips.push(`<span class="log-chip">⏱ ${h.duration}'</span>`);
+        if(h.feeling)chips.push(`<span class="log-chip">${feelLabel[h.feeling]||h.feeling}</span>`);
+        if(h.talkTest&&h.talkTest!=="na")chips.push(`<span class="log-chip">${talkLabel[h.talkTest]}</span>`);
+        const noteHTML=h.notes?`<div class="log-entry-note">"${h.notes}"</div>`:"";
+        return `<div class="log-entry" style="border-color:${dayColor(h.day)}22">
+          <div class="log-entry-header">
+            <div>
+              <div class="log-entry-day" style="color:${dayColor(h.day)}">Giorno ${h.day}</div>
+              <div class="log-entry-date">${h.date}</div>
+            </div>
+            <button class="log-del-btn" onclick="deleteEntry(${i})" title="Elimina">🗑</button>
+          </div>
+          <div class="log-entry-chips">${chips.join("")}</div>
+          ${noteHTML}
+        </div>`;
+      }).join("");
+
+  return `<div class="screen">
+    <div class="log-page">
+      <div class="log-header">
+        <div class="log-header-title">STATISTICHE</div>
+        <div class="log-header-sub">${hist.length} sessioni registrate</div>
+      </div>
+
+      <!-- KPI row -->
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-label">QUESTA SETTIMANA</div>
+          <div class="stat-val" style="color:#2196F3">${weekCounts[0]}</div>
+          <div class="stat-sub">allenamenti</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">DURATA MEDIA</div>
+          <div class="stat-val" style="color:#FF5722">${avgDur || "—"}</div>
+          <div class="stat-sub">${avgDur?"minuti":""}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">HR MEDIA</div>
+          <div class="stat-val" style="color:#EF5350">${avgHR}</div>
+          <div class="stat-sub">${avgHR!=="—"?"bpm":""}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">ULTIMO PESO KB</div>
+          <div class="stat-val" style="color:#9C27B0">${lastWeight}</div>
+          <div class="stat-sub">${lastWeight!=="—"?"kg":""}</div>
+        </div>
+      </div>
+
+      <!-- Frequenza settimanale -->
+      <div class="stat-cards">
+        <div class="stat-card full">
+          <div class="stat-label">FREQUENZA SETTIMANALE</div>
+          <div class="mini-bars">${weekBars}</div>
+        </div>
+      </div>
+
+      <!-- Distribuzione + HR trend -->
+      <div class="stat-cards">
+        <div class="stat-card full">
+          <div class="stat-label">DISTRIBUZIONE GIORNI</div>
+          <div class="donut-wrap">
+            ${donutSVG}
+            <div class="donut-legend">${donutLegend}</div>
+          </div>
+        </div>
+      </div>
+
+      ${hrData.length>=2?`<div class="stat-cards">
+        <div class="stat-card full">
+          <div class="stat-label">TREND HR MEDIA (ultime ${hrData.length} sessioni)</div>
+          ${hrTrendHTML}
+        </div>
+      </div>`:""}
+
+      ${wData.length>=2?`<div class="stat-cards">
+        <div class="stat-card full">
+          <div class="stat-label">PROGRESSIONE PESO KB</div>
+          ${wTrendHTML}
+        </div>
+      </div>`:""}
+
+      <!-- Lista sessioni -->
+      <div class="log-list-header">
+        <div class="log-list-title">TUTTE LE SESSIONI</div>
+        ${hist.length>0?`<button class="log-clear-btn" onclick="clearAll()">Cancella tutto</button>`:""}
+      </div>
+      ${sessionList}
+      <div style="height:20px"></div>
+    </div>
+    ${navHTML("log")}
+  </div>`;
+}
+
+// ── RENDER AXE SETUP PAGE ─────────────────────────────────────────────────────
+function renderAxe(){
+  const pr=state.axeProgress;
+  const ax=state.axe;
+
+  // Calcolo fase e progressione
+  const phases=[
+    {id:"fase 1",label:"4 reps / set",desc:"10 → 30 set a 4 reps",maxSets:30,reps:4},
+    {id:"fase 2",label:"6 reps / set",desc:"10 → 30 set a 6 reps",maxSets:30,reps:6},
+    {id:"fase 3",label:"+ peso",desc:"Aumenta KB, ricomincia da 4 reps",maxSets:30,reps:4},
+  ];
+  const curPhaseIdx=phases.findIndex(p=>p.id===pr.phase)||0;
+  const curPhase=phases[curPhaseIdx]||phases[0];
+  const progPct=Math.min(100,Math.round((pr.currentSets/curPhase.maxSets)*100));
+  const nextTarget=pr.currentSets<10?10:pr.currentSets<20?20:30;
+
+  // Storico AXE ultime 4 sessioni
+  const axHist=state.axeHistory.slice(-4).reverse();
+  const histRows=axHist.length===0
+    ?`<div style="font-size:13px;color:var(--muted);padding:8px 0;">Nessuna sessione AXE ancora completata.</div>`
+    :axHist.map(h=>`
+      <div class="axe-hist-row">
+        <div>
+          <div class="axe-hist-sets">${h.sets} <span style="font-size:14px;color:var(--muted)">set</span></div>
+          <div style="font-size:11px;color:var(--muted)">${h.reps} reps/set · ${h.restSec}" rest</div>
+        </div>
+        <div class="axe-hist-meta">
+          ${h.date}<br>
+          ${h.weight||'10'} kg
+          ${h.talkTest==="ok"?'<br><span style="color:#00BFA5">✅ talk OK</span>':h.talkTest==="fail"?'<br><span style="color:#EF5350">❌ affannato</span>':""}
+        </div>
+      </div>`).join("");
+
+  // Stepper reps
+  const repsOpts=[2,4,6];
+  const repsHTML=repsOpts.map(v=>`
+    <button class="axe-phase-pill ${ax.repsPerSet===v?'active':''}"
+      onclick="axeSetReps(${v})" style="${ax.repsPerSet===v?'font-size:13px;':'font-size:13px;'}">
+      ${v} reps
+    </button>`).join("");
+
+  // Stepper rest
+  const restOpts=[{v:45,l:"45\""},{v:60,l:"1'"},{v:90,l:"1'30\""},{v:120,l:"2'"}];
+  const restHTML=restOpts.map(o=>`
+    <button class="axe-phase-pill ${ax.restSec===o.v?'active':''}"
+      onclick="axeSetRest(${o.v})" style="font-size:13px;">
+      ${o.l}
+    </button>`).join("");
+
+  // Target set suggerito
+  const suggestedSets=pr.currentSets<10?10:pr.currentSets<20?pr.currentSets+2:Math.min(pr.currentSets+2,30);
+
+  return `<div class="screen">
+    <div class="axe-page">
+
+      <div class="axe-page-header">
+        <div class="axe-page-label">ANTI-GLYCOLYTIC TRAINING</div>
+        <div class="axe-page-title">KETTLEBELL<br>AXE</div>
+        <div class="axe-page-sub">OTM — Ogni minuto esegui il set, il resto è recupero.<br>Fermati ai primi segnali di cedimento.</div>
+      </div>
+
+      <!-- Setup -->
+      <div class="axe-setup-card">
+        <div class="axe-setup-title">CONFIGURAZIONE SESSIONE</div>
+
+        <div style="margin-bottom:12px;">
+          <div class="axe-param-lbl" style="font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:7px;">ESERCIZIO</div>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            ${Object.entries(AXE_EX).map(([k,ex])=>`
+              <button onclick="axeSetExercise('${k}')"
+                style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;
+                  background:${ax.exercise===k?'#1A0025':'#0A0010'};
+                  border:1.5px solid ${ax.exercise===k?'var(--axe)':'#2A0035'};
+                  color:${ax.exercise===k?'var(--axeGlow)':'var(--muted)'};text-align:left;width:100%;">
+                <span style="font-size:22px;">${ex.emoji}</span>
+                <span style="flex:1;">
+                  <span style="font-weight:700;font-size:14px;display:block;">${ex.label}</span>
+                  <span style="font-size:11px;">${ex.level}</span>
+                </span>
+                ${ax.exercise===k?'<span style="color:var(--axe);font-size:18px;">●</span>':''}
+              </button>`).join("")}
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <div class="axe-param-lbl" style="font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:7px;">REPS PER SET</div>
+          <div style="display:flex;gap:8px;">${repsHTML}</div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <div class="axe-param-lbl" style="font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:7px;">RECUPERO POST-SET</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">${restHTML}</div>
+        </div>
+
+        <div>
+          <div class="axe-param-lbl" style="font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:7px;">TARGET SET OGGI</div>
+          <div class="axe-stepper">
+            <button class="axe-step-btn" onclick="axeChangeTarget(-2)">−</button>
+            <span class="axe-step-val" id="axe-target-val">${ax.targetSets}</span>
+            <button class="axe-step-btn" onclick="axeChangeTarget(2)">+</button>
+            <span class="axe-step-unit">set (suggerito: ${suggestedSets})</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Stop signs -->
+      <div class="axe-stop-box">
+        <div class="axe-stop-title">🛑 SEGNALI DI STOP — FERMA LA SESSIONE</div>
+        <div class="axe-stop-item"><span class="axe-stop-n">1</span>La velocità del set cala in modo evidente</div>
+        <div class="axe-stop-item"><span class="axe-stop-n">2</span>La cadenza si riduce (meno reps completate per minuto)</div>
+        <div class="axe-stop-item"><span class="axe-stop-n">3</span>La tecnica si deteriora — non riesci a fare reps pulite</div>
+        <div class="axe-stop-item"><span class="axe-stop-n">4</span>Senti bruciore muscolare (zona glicolitica)</div>
+        <div class="axe-stop-item"><span class="axe-stop-n">5</span>Non riesci più a parlare in frasi brevi durante il riposo</div>
+      </div>
+
+      <!-- Progressione -->
+      <div class="axe-prog-card">
+        <div class="axe-prog-title">PROGRESSIONE — ${pr.phase.toUpperCase()}</div>
+        <div class="axe-prog-sub">${curPhase.desc} · KB 10 kg</div>
+        <div class="axe-prog-bar-wrap"><div class="axe-prog-bar" style="width:${progPct}%"></div></div>
+        <div class="axe-prog-labels">
+          <span>0 set</span><span style="color:var(--axeGlow)">${pr.currentSets} raggiunto</span><span>${curPhase.maxSets} set</span>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--muted);">
+          Prossimo step: <span style="color:var(--axeGlow)">arriva a ${nextTarget} set</span> consecutivi con tecnica pulita → avanza
+        </div>
+        <div class="axe-prog-phase">
+          ${phases.map(function(p){return '<div class="axe-phase-pill '+(p.id===pr.phase?'active':'')+'">'+ p.label+'</div>';}).join("")}
+        </div>
+      </div>
+
+      <!-- Storico -->
+      <div class="axe-hist-section">
+        <div class="axe-hist-label">ULTIME SESSIONI AXE</div>
+        ${histRows}
+      </div>
+
+      <div style="height:14px;"></div>
+
+    </div>
+
+    <!-- Bottone start fisso sopra nav -->
+    <button class="axe-start-btn" onclick="startAxeSession()">🪓 INIZIA SESSIONE AXE</button>
+    <div style="height:8px;"></div>
+    ${navHTML("axe")}
+  </div>`;
+}
+
+// ── RENDER AXE WORKOUT ────────────────────────────────────────────────────────
+function renderAxeWorkout(){
+  const ax=state.axe;
+  const isWork=ax.phase==="work";
+  const isRest=ax.phase==="rest";
+  const isIdle=ax.phase==="idle";
+
+  const accentCol=isWork?"#9C27B0":isRest?"#1565C0":"#607080";
+
+  // Ring timer (solo durante rest OTM)
+  let ringSection="";
+  if(isRest){
+    ringSection=`<div class="axe-ring-wrap">${ringHTML(ax.restSec,ax.restRemaining,"#1565C0",ax.restRemaining<=3&&ax.restRemaining>0)}</div>`;
+  } else if(isWork){
+    ringSection=`<div class="axe-ring-wrap">
+      <svg width="160" height="160" style="filter:drop-shadow(0 0 18px #9C27B055)">
+        <circle cx="80" cy="80" r="68" fill="none" stroke="#2A0040" stroke-width="9"/>
+        <circle cx="80" cy="80" r="68" fill="none" stroke="#9C27B0" stroke-width="9"/>
+        <text x="80" y="94" text-anchor="middle" fill="#CE93D8" font-family="'Bebas Neue',sans-serif" font-size="32">EXECUTE</text>
+      </svg>
+    </div>`;
+  } else {
+    ringSection=`<div class="axe-ring-wrap">
+      <div class="no-timer-circle" style="border-color:#2A0040;">🪓</div>
+    </div>`;
+  }
+
+  // Talk test banner (appare dopo metà sessione, una volta sola)
+  const halfWay=ax.setsDone>=Math.floor(ax.targetSets/2);
+  const talkBanner=(halfWay&&!ax.talkAnswered&&isRest)?`
+    <div class="axe-talk-banner">
+      <span class="axe-talk-icon">💬</span>
+      <span class="axe-talk-text">Riesci a parlare in frasi brevi? Se sì, sei in zona AGT.</span>
+      <button class="axe-talk-ok" onclick="axeTalkAnswer('ok')">Sì</button>
+      <button class="axe-talk-ko" onclick="axeTalkAnswer('fail')">No</button>
+    </div>`:"";
+
+  // Fase display
+  const phaseName=isWork?"SET":isRest?"RIPOSO":"PRONTO";
+  const phaseHint=isWork
+    ?`${ax.repsPerSet} reps · tecnica pulita · velocità costante`
+    :isRest
+    ?`Recupero — prossimo set al suono`
+    :`Premi START per iniziare il primo set`;
+
+  // Bottone principale
+  let actionRow="";
+  if(isIdle){
+    actionRow=`<div class="axe-action-row">
+      <button class="axe-btn-go" style="background:#9C27B0;" onclick="axeStartSet()">▶ START — esegui il set</button>
+      <button class="axe-btn-abort" onclick="axeFinishSession()">Fine sessione</button>
+    </div>`;
+  } else if(isWork){
+    actionRow=`<div class="axe-action-row" style="flex-direction:column;gap:10px;">
+      <button class="axe-btn-go" style="background:#00BFA5;font-size:22px;padding:22px;" onclick="axeSetDone()">✅ SET FATTO</button>
+      <div style="display:flex;gap:10px;">
+        <button class="axe-btn-abort" style="flex:1;" onclick="axeAbortSet()">🛑 Stop anticipato</button>
+        <button class="axe-btn-abort" style="flex:1;" onclick="axeFinishSession()">Fine sessione</button>
+      </div>
+    </div>`;
+  } else {
+    // REST
+    actionRow=`<div class="axe-action-row">
+      <button class="axe-btn-go" style="background:#1565C0;opacity:0.7;font-size:15px;" onclick="axeSkipRest()">⏭ Salta rest</button>
+      <button class="axe-btn-abort" onclick="axeFinishSession()">Fine sessione</button>
+    </div>`;
+  }
+
+  return `<div class="screen axe-wk-screen">
+
+    <!-- HUD superiore -->
+    <div class="axe-hud">
+      <div class="axe-hud-item">
+        <div class="axe-hud-val" style="color:var(--axeGlow)">${ax.setsDone}</div>
+        <div class="axe-hud-lbl">SET FATTI</div>
+      </div>
+      <div class="axe-hud-item">
+        <div class="axe-hud-val" style="color:var(--muted)">${ax.targetSets}</div>
+        <div class="axe-hud-lbl">TARGET</div>
+      </div>
+      <div class="axe-hud-item">
+        <div class="axe-hud-val" style="color:#FFC107">${ax.repsPerSet}</div>
+        <div class="axe-hud-lbl">REPS</div>
+      </div>
+      <div class="axe-hud-item">
+        <div class="axe-hud-val" style="color:#2196F3">${ax.restSec}"</div>
+        <div class="axe-hud-lbl">REST OTM</div>
+      </div>
+    </div>
+
+    <!-- Progress bar sets -->
+    <div class="progress-wrap" style="margin:0;">
+      <div class="progress-bar" style="width:${Math.min(100,ax.setsDone/ax.targetSets*100).toFixed(1)}%;background:var(--axe);"></div>
+    </div>
+
+    <!-- Fase -->
+    <div class="axe-phase-display">
+      <div class="axe-phase-name" style="color:${accentCol};${isRest?'':''}${isRest?'class="axe-rest-pulse"':''}">${phaseName}</div>
+      <div class="axe-phase-hint">${phaseHint}</div>
+    </div>
+
+    ${ringSection}
+
+    <!-- Reps display -->
+    <div class="axe-reps-display">
+      <div class="axe-reps-num" style="color:${accentCol}">${ax.repsPerSet}</div>
+      <div class="axe-reps-lbl">${AXE_EX[ax.exercise||"swing"].emoji} ${AXE_EX[ax.exercise||"swing"].label}</div>
+    </div>
+
+    ${talkBanner}
+
+    <!-- Cue tecnica + Video -->
+    <div style="background:#0A0010;border-radius:12px;margin:0 18px 12px;padding:12px 16px;border:1px solid #2A0035;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--muted);">CUE TECNICA</div>
+        <a href="${AXE_EX[ax.exercise||"swing"].yt}" target="_blank"
+          style="font-size:12px;font-weight:700;color:var(--axeGlow);background:#1A0025;border:1px solid var(--axe);border-radius:8px;padding:4px 10px;text-decoration:none;">
+          ▶️ Video
+        </a>
+      </div>
+      <div style="font-size:13px;color:var(--text);line-height:1.6;">
+        ${AXE_EX[ax.exercise||"swing"].cue}<br>
+        <span style="color:var(--muted);">Fermati se la velocità cala</span>
+      </div>
+    </div>
+
+    <!-- Bottone principale -->
+    ${actionRow}
+
+  </div>`;
+}
+
+// ── RENDER AXE DONE ───────────────────────────────────────────────────────────
+function renderAxeDone(){
+  const ax=state.axe;
+  const mins=ax.sessionStart?Math.round((Date.now()-ax.sessionStart)/60000):0;
+  const totalReps=ax.setsDone*ax.repsPerSet;
+  const talkOK=ax.talkAnswered==="ok";
+
+  // Suggerimento prossima sessione
+  let nextSugg="";
+  if(ax.setsDone>=state.axe.targetSets){
+    nextSugg=`✅ Target raggiunto! Prossima sessione: <b>+2 set</b>`;
+  } else {
+    nextSugg=`Arrivato a ${ax.setsDone} set — prossima sessione: <b>stesso target</b>`;
+  }
+
+  return `<div class="screen">
+    <div class="axe-done-screen">
+      <div class="axe-done-label">SESSIONE AXE COMPLETATA</div>
+      <div class="axe-done-sets">${ax.setsDone}</div>
+      <div class="axe-done-title">SET<br>COMPLETATI</div>
+      <div class="axe-done-sub">${totalReps} reps totali · ${mins} min · ${ax.repsPerSet} reps/set</div>
+
+      <div style="margin-bottom:20px;text-align:center;">
+        <span class="axe-done-chip">⚡ ${ax.repsPerSet} reps/set</span>
+        <span class="axe-done-chip">⏱ ${ax.restSec}" rest</span>
+        ${talkOK?'<span class="axe-done-chip" style="border-color:#00BFA5;color:#00BFA5;">💬 Talk OK</span>':''}
+      </div>
+
+      <div style="width:100%;background:#0A0010;border-radius:14px;padding:14px 16px;margin-bottom:22px;border:1.5px solid #2A0035;">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:6px;">PROSSIMA SESSIONE</div>
+        <div style="font-size:14px;color:var(--text);line-height:1.6;">${nextSugg}</div>
+      </div>
+
+      <!-- Form log essenziale -->
+      <div style="width:100%;display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
+        <div>
+          <div class="log-section-label">SENSAZIONE</div>
+          <div class="feel-pills">
+            ${[{v:"😫",l:"Pesante"},{v:"😐",l:"Normale"},{v:"💪",l:"Bene"},{v:"🔥",l:"Ottimo"}].map(o=>`
+              <div class="feel-pill ${state.logForm.feeling===o.v?'sel':''}" onclick="setLogField('feeling','${o.v}')">
+                ${o.v}<span>${o.l}</span>
+              </div>`).join("")}
+          </div>
+        </div>
+        <div>
+          <div class="log-section-label">HR MEDIA (Amazfit)</div>
+          <div class="log-row">
+            <div class="log-field">
+              <input class="log-input" type="number" placeholder="Media bpm" value="${state.logForm.hrAvg}"
+                oninput="setLogField('hrAvg',this.value)" inputmode="numeric"/>
+            </div>
+            <div class="log-field">
+              <input class="log-input" type="number" placeholder="Max bpm" value="${state.logForm.hrMax}"
+                oninput="setLogField('hrMax',this.value)" inputmode="numeric"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="axe-done-save" onclick="saveAxeSession()">💾 Salva Sessione AXE</button>
+      <button class="axe-done-skip" onclick="switchTab('axe')">Salta e torna ad AXE</button>
+    </div>
+  </div>`;
+}
+
+// ── RENDER PROGRAMS ───────────────────────────────────────────────────────────
+// Helper: costruisce un tag HTML per i macro-tag senza backtick annidati
+function macroTagHTML(t){
+  return '<span class="macro-tag" style="background:'+t.c+'22;color:'+t.c+';border:1px solid '+t.c+'44;">'+t.t+'</span>';
+}
+function macroWeekRowHTML(w){
+  return '<div class="macro-week-row">'
+    +'<div class="macro-week-label">'+w.label+'</div>'
+    +'<div class="macro-week-tags">'
+    +w.tags.map(macroTagHTML).join("")
+    +'<span style="font-size:10px;color:var(--muted);align-self:center;margin-left:4px;">'+w.note+'</span>'
+    +'</div></div>';
+}
+function microDayBoxHTML(d,DAYS_IT){
+  const hasDot=d.act!=="—";
+  return '<div class="micro-day-box" style="background:'+(hasDot?d.col+'18':'#080C0F')+';border-color:'+(hasDot?d.col:'#1E2A35')+';">'
+    +'<div class="micro-day-name">'+DAYS_IT[d.d].toUpperCase()+'</div>'
+    +'<div class="micro-day-act" style="color:'+(hasDot?d.col:'#1E2A35')+'">'+d.act+'</div>'
+    +'</div>';
+}
+
+function renderPrograms(){
+  const DAYS_IT=["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
+  const ap=state.activeProgram;
+
+  // ── Suggerimento automatico basato sullo storico ──
+  const todayDow=new Date().getDay();
+  const lastWeek=state.history.slice(-14);
+  const lastAxe=state.axeHistory.slice(-7);
+  const thisWeekABC=lastWeek.filter(h=>{
+    const [d,m,y]=h.date.split("/").map(Number);
+    const dt=new Date(y,m-1,d);
+    return (Date.now()-dt)<7*86400000;
+  });
+  const thisWeekAXE=lastAxe.filter(h=>{
+    const [d,m,y]=h.date.split("/").map(Number);
+    const dt=new Date(y,m-1,d);
+    return (Date.now()-dt)<7*86400000;
+  });
+  const abcCount=thisWeekABC.length;
+  const axeCount=thisWeekAXE.length;
+  const daysDone=thisWeekABC.map(h=>h.day);
+
+  let suggText="",suggChips=[];
+  if(abcCount===0&&axeCount===0){
+    suggText="Nessun allenamento questa settimana. Inizia con un Giorno A per rimettere in moto il pattern.";
+    suggChips=[{t:"Oggi: Giorno A",c:"#FF5722"}];
+  } else if(axeCount===0&&abcCount>=1){
+    suggText=`Hai fatto ${abcCount} sessione/i tecnica/e senza AXE. Inserisci almeno 1 sessione AXE questa settimana per costruire il motore aerobico.`;
+    suggChips=[{t:"Prossima: AXE Swing 4×10",c:"#9C27B0"}];
+  } else if(axeCount>=2&&abcCount===0){
+    suggText="Stai facendo solo AXE. Bene per il cardiovascolare — ma aggiungi almeno 1 giorno tecnico per non perdere coordinazione e forza.";
+    suggChips=[{t:"Aggiungi: Giorno A o C",c:"#FF5722"}];
+  } else if(abcCount>=3&&axeCount>=2){
+    suggText="Settimana intensa! Valuta un giorno di riposo prima di continuare — il recupero è parte del programma.";
+    suggChips=[{t:"Suggerimento: riposo oggi",c:"#607080"}];
+  } else {
+    const missing=["A","B","C"].filter(d=>!daysDone.includes(d));
+    var missingStr=missing.length?"Giorni non ancora fatti: "+missing.join(", ")+".":"";suggText="Questa settimana: "+abcCount+" sessione/i tecniche, "+axeCount+" AXE. "+missingStr;
+    if(missing.length)missing.forEach(d=>suggChips.push({t:`Giorno ${d}`,c:dayColor(d)}));
+    if(axeCount<2)suggChips.push({t:"+ 1 AXE",c:"#9C27B0"});
+  }
+
+  const suggChipsHTML=suggChips.map(function(c){
+    return '<div class="prog-day-chip" style="border-color:'+c.c+';color:'+c.c+';background:'+c.c+'18;">'+c.t+'</div>';
+  }).join("");
+
+  // ── Microcicli ──
+  const microCards=MICROCYCLES.map(function(mc){
+    const isActive=ap&&ap.id===mc.id;
+    const sortedDays=[...mc.days].sort((a,b)=>a.d-b.d);
+    const dayBoxes=sortedDays.map(d=>microDayBoxHTML(d,DAYS_IT)).join("");
+    const btnHTML=isActive
+      ?'<button class="micro-activate-btn" style="background:#001A10;border:1.5px solid #00BFA5;color:#00BFA5;" onclick="deactivateProgram()">✅ Attivo — Disattiva</button>'
+      :'<button class="micro-activate-btn" style="background:'+mc.color+';color:#fff;" onclick="activateProgram(\'micro\',\''+mc.id+'\')">▶ Attiva questo microciclo</button>';
+    return '<div class="micro-card '+(isActive?'active-prog':'')+'"><div class="micro-card-header"><span class="micro-card-emoji">'+mc.emoji+'</span><div><div class="micro-card-title">'+mc.title+'</div><div class="micro-card-sub">'+mc.subtitle+'</div></div></div>'
+      +'<div class="micro-week">'+dayBoxes+'</div>'
+      +'<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;">'+mc.desc+'</div>'
+      +btnHTML+'</div>';
+  }).join("");
+
+  // ── Macrocicli ──
+  const macroCards=MACROCYCLES.map(function(mc){
+    const isActive=ap&&ap.id===mc.id;
+    const weekRows=mc.weeks.map(macroWeekRowHTML).join("");
+    const btnHTML=isActive
+      ?'<button class="micro-activate-btn" style="background:#1A1200;border:1.5px solid #FFC107;color:#FFC107;margin-top:6px;" onclick="deactivateProgram()">✅ Attivo — Disattiva</button>'
+      :'<button class="micro-activate-btn" style="background:'+mc.color+';color:#000;margin-top:6px;" onclick="activateProgram(\'macro\',\''+mc.id+'\')">▶ Attiva questo macrociclo</button>';
+    return '<div class="macro-card '+(isActive?'active-prog':'')+'"><div class="macro-card-header"><span style="font-size:28px;">'+mc.emoji+'</span><div><div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;">'+mc.title+'</div><div style="font-size:12px;color:var(--muted);">'+mc.subtitle+'</div></div></div>'
+      +'<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;">'+mc.desc+'</div>'
+      +'<div class="macro-weeks">'+weekRows+'</div>'
+      +btnHTML+'</div>';
+  }).join("");
+
+  // ── Mobilità warm-up ──
+  const mobCards=MOBILITY_EX.map(function(ex){
+    return '<div class="mob-card"><div class="mob-emoji">'+ex.emoji+'</div><div class="mob-name">'+ex.name+'</div><div class="mob-sets">'+ex.sets+'</div><div class="mob-cue">'+ex.cue+'</div><a href="'+ex.yt+'" target="_blank" class="mob-yt">▶️ Video</a></div>';
+  }).join("");
+
+  return `<div class="screen">
+    <div class="prog-page">
+
+      <div class="prog-header">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:5px;color:#00BFA5;margin-bottom:4px;">PIANIFICAZIONE</div>
+        <div class="prog-header-title">PROGRAMMI</div>
+        <div class="prog-header-sub">Ispirati, scegli un template o attivalo come guida settimanale.</div>
+      </div>
+
+      <!-- Nota AXE -->
+      <div style="background:#0A0A1F;border:1.5px solid #2A3A6A;border-radius:14px;margin:0 18px 4px;padding:14px 16px;">
+        <div style="font-size:11px;letter-spacing:2px;color:#7CB3FF;margin-bottom:6px;">COME FUNZIONA AXE</div>
+        <div style="font-size:13px;color:var(--text);line-height:1.7;">
+          Una sessione AXE = <b>1 solo esercizio × N set</b>, con recupero quasi completo tra i set (OTM).<br>
+          <span style="color:var(--muted);">Non è circuit training. L'obiettivo è fare volume senza accumulare acido lattico — fermati ai primi segnali di cedimento.</span>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:11px;background:#1A2A4A;color:#7CB3FF;padding:4px 10px;border-radius:8px;">4 reps/set · 60" rest</span>
+          <span style="font-size:11px;background:#1A2A4A;color:#7CB3FF;padding:4px 10px;border-radius:8px;">Aumenta set gradualmente</span>
+          <span style="font-size:11px;background:#1A2A4A;color:#7CB3FF;padding:4px 10px;border-radius:8px;">Talk test al 50%</span>
+        </div>
+      </div>
+
+      <!-- Suggerimento automatico -->
+      <div class="prog-section">
+        <div class="prog-section-label">💡 SUGGERIMENTO BASATO SULLO STORICO</div>
+        <div class="prog-suggest-card">
+          <div class="prog-suggest-title">Questa settimana</div>
+          <div class="prog-suggest-row">${suggChipsHTML}</div>
+          <div class="prog-suggest-note">${suggText}</div>
+        </div>
+      </div>
+
+      <!-- Microcicli -->
+      <div class="prog-section">
+        <div class="prog-section-label">📅 MICROCICLO SETTIMANALE</div>
+        ${microCards}
+      </div>
+
+      <!-- Macrocicli -->
+      <div class="prog-section">
+        <div class="prog-section-label">🗓 MACROCICLO MENSILE (4 SETTIMANE)</div>
+        ${macroCards}
+      </div>
+
+      <!-- Mobilità -->
+      <div class="prog-section">
+        <div class="prog-section-label">🌀 WARM-UP / MOBILITÀ (prima di ogni sessione)</div>
+        <div style="background:#0A0A0A;border:1px solid #1E2A35;border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:13px;color:var(--muted);line-height:1.6;">
+          Esegui 2–3 esercizi a scelta prima di A, B, C o AXE. Non sono esercizi AGT — servono ad aprire le articolazioni e attivare il pattern di movimento.
+        </div>
+        <div class="mob-grid">${mobCards}</div>
+      </div>
+
+      <div style="height:20px;"></div>
+    </div>
+    ${navHTML("programs")}
+  </div>`;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render(){
+  const app=document.getElementById("app");
+  if(state.tab==="workout")         app.innerHTML=renderWorkout();
+  else if(state.tab==="done")       app.innerHTML=renderDone();
+  else if(state.tab==="log")        app.innerHTML=renderLog();
+  else if(state.tab==="axe")        app.innerHTML=renderAxe();
+  else if(state.tab==="axe-workout")app.innerHTML=renderAxeWorkout();
+  else if(state.tab==="axe-done")   app.innerHTML=renderAxeDone();
+  else if(state.tab==="programs")   app.innerHTML=renderPrograms();
+  else                               app.innerHTML=renderHome();
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+// ── WAKE LOCK ─────────────────────────────────────────────────────────────────
+let wakeLock=null;
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      wakeLock=await navigator.wakeLock.request('screen');
+    }
+  }catch(e){}
+}
+function releaseWakeLock(){
+  if(wakeLock){wakeLock.release();wakeLock=null;}
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&state.tab==='workout'){requestWakeLock();}
+});
+
+function startWorkout(key){
+  unlockAudio();
+  clearTimerInterval();
+  requestWakeLock();
+  const step=DAYS[key].seq[0];
+  state={...state,
+    tab:"workout",dayKey:key,stepIdx:0,
+    remaining:step.timerSec??0,timerRunning:true,startTime:Date.now(),
+    logForm:{feeling:null,hrAvg:"",hrMax:"",weight:"10",talkTest:null,notes:""}
+  };
+  render();
+  if(step.timerSec)startTimerInterval();
+}
+
+function exitWorkout(){clearTimerInterval();releaseWakeLock();state.tab="home";state.timerRunning=false;render();}
+function goHome(){clearTimerInterval();releaseWakeLock();state.tab="home";state.timerRunning=false;render();}
+
+function nextStep(){
+  clearTimerInterval();
+  const seq=DAYS[state.dayKey].seq;
+  if(state.stepIdx>=seq.length-1){
+    state.workoutMins=Math.round((Date.now()-state.startTime)/60000);
+    state.workoutSteps=seq.length;
+    state.tab="done";
+    state.timerRunning=false;
+    releaseWakeLock();
+    render();
+    return;
+  }
+  state.stepIdx++;
+  const step=seq[state.stepIdx];
+  state.remaining=step.timerSec??0;
+  state.timerRunning=!!step.timerSec;
+  render();
+  if(step.timerSec)startTimerInterval();
+}
+
+function toggleTimer(){
+  if(state.timerRunning){
+    clearTimerInterval();state.timerRunning=false;render();
+  }else{
+    unlockAudio();state.timerRunning=true;render();startTimerInterval();
+  }
+}
+
+function resetTimer(){
+  clearTimerInterval();
+  const step=DAYS[state.dayKey].seq[state.stepIdx];
+  state.remaining=step.timerSec;state.timerRunning=false;render();
+}
+
+function startTimerInterval(){
+  timerInterval=setInterval(()=>{
+    state.remaining--;
+    if(state.remaining===3||state.remaining===2||state.remaining===1)beepTick();
+    if(state.remaining<=0){
+      clearTimerInterval();state.timerRunning=false;
+      beepEnd();
+      setTimeout(()=>nextStep(),950);
+      return;
+    }
+    const step=DAYS[state.dayKey].seq[state.stepIdx];
+    const isRest=step.type==="rest"||step.name==="Rest";
+    const isAmrap=!!step.isAmrap;
+    const day=DAYS[state.dayKey];
+    const accentColor=isRest?"#1565C0":isAmrap?"#FFC107":day.color;
+    const countdown=state.remaining<=3;
+    const wrap=document.getElementById("timer-wrap");
+    if(wrap)wrap.innerHTML=ringHTML(step.timerSec,state.remaining,accentColor,countdown);
+    const repsEl=document.getElementById("reps-label");
+    if(repsEl)repsEl.style.color=countdown?"#EF5350":accentColor;
+    const btn=document.getElementById("btn-startstop");
+    if(btn){btn.textContent="⏸ Pausa";btn.style.background="#CC4419";}
+  },1000);
+}
+
+function clearTimerInterval(){
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+}
+
+// Log form helpers
+function setLogField(field,val){
+  state.logForm[field]=val;
+  // re-render solo la done senza perdere focus su input testo
+  if(field==="feeling"||field==="talkTest"){render();}
+}
+
+function saveSession(){
+  const f=state.logForm;
+  const entry={
+    day:state.dayKey,
+    date:new Date().toLocaleDateString("it-IT"),
+    duration:state.workoutMins,
+    completedSteps:state.workoutSteps,
+    weight:f.weight||"10",
+    hrAvg:f.hrAvg?Number(f.hrAvg):null,
+    hrMax:f.hrMax?Number(f.hrMax):null,
+    feeling:f.feeling||null,
+    talkTest:f.talkTest||null,
+    notes:f.notes||"",
+  };
+  state.history.push(entry);
+  saveHistory();
+  state.tab="home";
+  state.timerRunning=false;
+  render();
+}
+
+function skipSave(){
+  state.tab="home";state.timerRunning=false;render();
+}
+
+function deleteEntry(i){
+  if(confirm("Elimina questa sessione?")){
+    state.history.splice(i,1);
+    saveHistory();render();
+  }
+}
+
+function clearAll(){
+  if(confirm("Cancellare tutto lo storico?")){
+    state.history=[];saveHistory();render();
+  }
+}
+
+// ── AXE ACTIONS ───────────────────────────────────────────────────────────────
+let axeRestInterval=null;
+
+function axeSetReps(v){state.axe.repsPerSet=v;render();}
+function axeSetRest(v){state.axe.restSec=v;render();}
+function axeSetExercise(v){state.axe.exercise=v;render();}
+function axeChangeTarget(delta){
+  state.axe.targetSets=Math.max(4,Math.min(40,state.axe.targetSets+delta));
+  const el=document.getElementById("axe-target-val");
+  if(el)el.textContent=state.axe.targetSets;
+}
+
+function startAxeSession(){
+  unlockAudio();
+  requestWakeLock();
+  clearAxeInterval();
+  state.axe.phase="idle";
+  state.axe.setsDone=0;
+  state.axe.sessionRunning=true;
+  state.axe.sessionStart=Date.now();
+  state.axe.talkAsked=false;
+  state.axe.talkAnswered=null;
+  state.logForm={feeling:null,hrAvg:"",hrMax:"",weight:"10",talkTest:null,notes:""};
+  state.tab="axe-workout";
+  render();
+}
+
+function axeStartSet(){
+  if(state.axe.phase==="rest")return;
+  unlockAudio();
+  clearAxeInterval();
+  state.axe.phase="work";
+  beepAxeGo();
+  render();
+}
+
+function axeAbortSet(){
+  clearAxeInterval();
+  state.axe.phase="idle";
+  render();
+}
+
+function axeSetDone(){
+  clearAxeInterval();
+  state.axe.setsDone++;
+  beepAxeRest();
+  if(state.axe.setsDone>=state.axe.targetSets){
+    beepAxeDone();
+    state.axe.sessionRunning=false;
+    state.tab="axe-done";
+    render();
+    return;
+  }
+  state.axe.phase="rest";
+  state.axe.restRemaining=state.axe.restSec;
+  render();
+  axeRestInterval=setInterval(()=>{
+    state.axe.restRemaining--;
+    if(state.axe.restRemaining<=3&&state.axe.restRemaining>0)beepTick();
+    if(state.axe.restRemaining<=0){
+      clearAxeInterval();
+      beepAxeGo();
+      state.axe.phase="idle";
+      render();
+      return;
+    }
+    // Aggiorna solo il ring senza full re-render
+    const wrap=document.querySelector(".axe-ring-wrap");
+    if(wrap) wrap.innerHTML=ringHTML(state.axe.restSec,state.axe.restRemaining,"#1565C0",state.axe.restRemaining<=3);
+  },1000);
+}
+
+function axeSkipRest(){
+  clearAxeInterval();
+  state.axe.phase="idle";
+  render();
+}
+
+function axeFinishSession(){
+  clearAxeInterval();
+  releaseWakeLock();
+  state.axe.sessionRunning=false;
+  state.tab="axe-done";
+  render();
+}
+
+function axeTalkAnswer(val){
+  state.axe.talkAnswered=val;
+  state.logForm.talkTest=val;
+  if(val==="fail"){
+    if(confirm("Test del parlato fallito — segnale di stop AGT.\nConsigli di terminare la sessione?")){
+      axeFinishSession();
+      return;
+    }
+  }
+  render();
+}
+
+function clearAxeInterval(){
+  if(axeRestInterval){clearInterval(axeRestInterval);axeRestInterval=null;}
+}
+
+function saveAxeSession(){
+  const ax=state.axe;
+  const f=state.logForm;
+  const mins=ax.sessionStart?Math.round((Date.now()-ax.sessionStart)/60000):0;
+  const entry={
+    date:new Date().toLocaleDateString("it-IT"),
+    sets:ax.setsDone,
+    reps:ax.repsPerSet,
+    restSec:ax.restSec,
+    weight:f.weight||"10",
+    hrAvg:f.hrAvg?Number(f.hrAvg):null,
+    hrMax:f.hrMax?Number(f.hrMax):null,
+    feeling:f.feeling||null,
+    talkTest:ax.talkAnswered||null,
+    duration:mins,
+  };
+  state.axeHistory.push(entry);
+  saveAxeHistory();
+  // Aggiorna progressione
+  const pr=state.axeProgress;
+  if(ax.setsDone>pr.currentSets)pr.currentSets=ax.setsDone;
+  if(pr.currentSets>=30&&pr.phase==="fase 1"){
+    pr.phase="fase 2";pr.currentSets=0;pr.repsPerSet=6;
+    alert("🎉 Fase 1 completata! Ora 6 reps/set — ricomincia da 10 set.");
+  } else if(pr.currentSets>=30&&pr.phase==="fase 2"){
+    pr.phase="fase 3";pr.currentSets=0;pr.repsPerSet=4;
+    alert("💪 Fase 2 completata! Aumenta il peso KB e ricomincia da 4 reps/set.");
+  }
+  saveAxeProgress();
+  state.tab="axe";
+  render();
+}
+
+function activateProgram(type,id){
+  const prog=type==="micro"
+    ?MICROCYCLES.find(m=>m.id===id)
+    :MACROCYCLES.find(m=>m.id===id);
+  if(!prog)return;
+  state.activeProgram={...prog,type};
+  saveActiveProgram();
+  render();
+  const hint=document.getElementById('sound-hint');
+  if(hint){
+    hint.textContent=`✅ "${prog.title}" attivato`;
+    hint.classList.add('show');
+    setTimeout(()=>{hint.classList.remove('show');hint.textContent='🔊 Tocca Start per attivare l\'audio';},2500);
+  }
+}
+
+function deactivateProgram(){
+  state.activeProgram=null;
+  saveActiveProgram();
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
