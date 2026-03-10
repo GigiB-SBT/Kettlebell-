@@ -587,6 +587,7 @@ let state={
     repsPerSet:4,currentSets:0,stepRPE:8,phase:"fase 1",
   })),
   activeProgram:JSON.parse(localStorage.getItem("kb-active-program")||"null"),
+  editingEntry:localStorage.getItem("kb-editing-entry")!==null ? Number(localStorage.getItem("kb-editing-entry")) : null,
 };
 let timerInterval=null;
 
@@ -785,7 +786,7 @@ function renderWorkout(){
         <div class="topbar-title" style="color:${accentColor}">${day.label} — ${day.subtitle}</div>
         <div class="topbar-step">Step ${state.stepIdx+1} / ${seq.length}</div>
       </div>
-      <div class="topbar-round">Round ${step.round}/${step.totalRounds}</div>
+      <button onclick="stopWorkoutEarly()" style="font-size:11px;font-weight:700;color:#EF5350;background:#1A0808;border:1px solid #EF535040;border-radius:8px;padding:6px 10px;">⏹ Stop</button>
     </div>
     <div class="progress-wrap"><div class="progress-bar" style="width:${progress}%;background:${accentColor}"></div></div>
     <div class="ex-name-wrap">
@@ -868,6 +869,20 @@ function renderDone(){
           <div class="log-section-label">PESO KB USATO (kg)</div>
           <input class="log-input" type="number" placeholder="10" value="${f.weight}"
             oninput="setLogField('weight',this.value)" inputmode="decimal" step="0.5"/>
+        </div>
+
+        <div>
+          <div class="log-section-label">WARM-UP FATTO (opzionale)</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${MOBILITY_EX.map(ex=>`
+              <div onclick="toggleWarmup('${ex.name}')"
+                style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;
+                border:1.5px solid ${(f.warmup||[]).includes(ex.name)?'#00BFA5':'#1E2A35'};
+                background:${(f.warmup||[]).includes(ex.name)?'#001A10':'#0A0F12'};
+                color:${(f.warmup||[]).includes(ex.name)?'#00BFA5':'#607080'};">
+                ${ex.emoji} ${ex.name}
+              </div>`).join("")}
+          </div>
         </div>
 
         <div>
@@ -1028,16 +1043,36 @@ function renderLog(){
         if(h.feeling)chips.push(`<span class="log-chip">${feelLabel[h.feeling]||h.feeling}</span>`);
         if(h.talkTest&&h.talkTest!=="na")chips.push(`<span class="log-chip">${talkLabel[h.talkTest]}</span>`);
         const noteHTML=h.notes?`<div class="log-entry-note">"${h.notes}"</div>`:"";
+        const warmupHTML=h.warmup&&h.warmup.length?`<div style="font-size:11px;color:#00BFA5;margin-top:4px;">🌀 Warm-up: ${h.warmup.join(", ")}</div>`:"";
+        const isEditing=state.editingEntry===i;
+        const editForm=isEditing?`
+          <div style="margin-top:10px;padding:10px;background:#0A0F12;border-radius:10px;border:1px solid #1E2A35;">
+            <div style="font-size:10px;letter-spacing:2px;color:#607080;margin-bottom:8px;">MODIFICA</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+              <input class="log-input" type="number" placeholder="HR media" value="${h.hrAvg||''}"
+                oninput="editEntryField(${i},'hrAvg',this.value)" inputmode="numeric" style="flex:1;"/>
+              <input class="log-input" type="number" placeholder="HR max" value="${h.hrMax||''}"
+                oninput="editEntryField(${i},'hrMax',this.value)" inputmode="numeric" style="flex:1;"/>
+            </div>
+            <input class="log-input" type="text" placeholder="Note..." value="${h.notes||''}"
+              oninput="editEntryField(${i},'notes',this.value)" style="width:100%;margin-bottom:8px;"/>
+            <button onclick="closeEdit()" style="width:100%;padding:8px;background:#00BFA5;color:#000;border-radius:8px;font-weight:700;font-size:13px;">✓ Fatto</button>
+          </div>`:"";
         return `<div class="log-entry" style="border-color:${dayColor(h.day)}22">
           <div class="log-entry-header">
             <div>
-              <div class="log-entry-day" style="color:${dayColor(h.day)}">Giorno ${h.day}</div>
+              <div class="log-entry-day" style="color:${dayColor(h.day)}">Giorno ${h.day}${h.partial?' · ⏹ Parziale':''}${isEditing?' · <span style="color:#FFC107;font-size:11px;">✏️ in modifica</span>':''}</div>
               <div class="log-entry-date">${h.date}</div>
             </div>
-            <button class="log-del-btn" onclick="deleteEntry(${i})" title="Elimina">🗑</button>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button onclick="openEdit(${i})" style="font-size:14px;background:none;color:#607080;padding:4px 6px;">✏️</button>
+              <button class="log-del-btn" onclick="deleteEntry(${i})" title="Elimina">🗑</button>
+            </div>
           </div>
           <div class="log-entry-chips">${chips.join("")}</div>
+          ${warmupHTML}
           ${noteHTML}
+          ${editForm}
         </div>`;
       }).join("");
 
@@ -1111,6 +1146,24 @@ function renderLog(){
         ${hist.length>0?`<button class="log-clear-btn" onclick="clearAll()">Cancella tutto</button>`:""}
       </div>
       ${sessionList}
+      <div style="padding:18px 18px 6px;">
+        <div style="font-size:10px;letter-spacing:2px;color:#607080;margin-bottom:10px;">BACKUP DATI</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <button onclick="exportJSON()" style="padding:13px;border-radius:12px;background:#0F1419;border:1.5px solid #1E2A35;color:#00BFA5;font-weight:700;font-size:14px;text-align:left;">
+            📦 Esporta backup completo (JSON)
+          </button>
+          <button onclick="exportCSV()" style="padding:13px;border-radius:12px;background:#0F1419;border:1.5px solid #1E2A35;color:#2196F3;font-weight:700;font-size:14px;text-align:left;">
+            📊 Esporta sessioni (CSV per Excel)
+          </button>
+          <button onclick="importJSON()" style="padding:13px;border-radius:12px;background:#0F1419;border:1.5px solid #1E2A35;color:#FFC107;font-weight:700;font-size:14px;text-align:left;">
+            📥 Importa backup (JSON)
+          </button>
+        </div>
+        <div style="font-size:11px;color:#3A4A55;margin-top:8px;line-height:1.6;">
+          Il backup JSON include sessioni, storico AXE e progressione.<br>
+          Il CSV è leggibile su Excel / Google Sheets.
+        </div>
+      </div>
       <div style="height:20px"></div>
     </div>
     ${navHTML("log")}
@@ -1752,9 +1805,12 @@ function saveSession(){
     feeling:f.feeling||null,
     talkTest:f.talkTest||null,
     notes:f.notes||"",
+    warmup:f.warmup&&f.warmup.length?f.warmup:[],
+    partial:state.partial||false,
   };
   state.history.push(entry);
   saveHistory();
+  state.partial=false;
   state.tab="home";
   state.timerRunning=false;
   render();
@@ -1910,6 +1966,129 @@ function saveAxeSession(){
   saveAxeProgress();
   state.tab="axe";
   render();
+}
+
+function stopWorkoutEarly(){
+  clearTimerInterval();
+  releaseWakeLock();
+  state.timerRunning=false;
+  state.workoutMins=Math.round((Date.now()-state.startTime)/60000);
+  state.workoutSteps=state.stepIdx+1;
+  state.tab="done";
+  // Segnala che è parziale
+  state.partial=true;
+  render();
+}
+
+function toggleWarmup(name){
+  const w=state.logForm.warmup||[];
+  const idx=w.indexOf(name);
+  if(idx>=0)w.splice(idx,1);else w.push(name);
+  state.logForm.warmup=[...w];
+  render();
+}
+
+function openEdit(i){
+  state.editingEntry=i;
+  localStorage.setItem("kb-editing-entry",String(i));
+  render();
+}
+function closeEdit(){
+  saveHistory();
+  state.editingEntry=null;
+  localStorage.removeItem("kb-editing-entry");
+  render();
+}
+function editEntryField(i,field,val){
+  const num=field==='hrAvg'||field==='hrMax';
+  state.history[i][field]=num?(val===''?null:Number(val)):val;
+  // salva in background senza re-render per non perdere il focus
+  localStorage.setItem("kb-history-v2",JSON.stringify(state.history));
+}
+
+// ── EXPORT / IMPORT ──────────────────────────────────────────────────────────
+function exportJSON(){
+  const data={
+    version:2,
+    exportedAt:new Date().toISOString(),
+    history:state.history,
+    axeHistory:state.axeHistory,
+    axeProgress:state.axeProgress,
+    activeProgram:state.activeProgram,
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`kettlebell-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportCSV(){
+  const headers=["Data","Giorno","Durata (min)","Parziale","Peso KB (kg)","HR Media","HR Max","Sensazione","Talk Test","Warm-up","Note"];
+  const rows=state.history.map(h=>[
+    h.date,
+    h.day,
+    h.duration||"",
+    h.partial?"Si":"No",
+    h.weight||"",
+    h.hrAvg||"",
+    h.hrMax||"",
+    h.feeling||"",
+    h.talkTest||"",
+    (h.warmup||[]).join(" | "),
+    h.notes||""
+  ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","));
+  const csv=[headers.join(","),...rows].join("\n");
+  const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`kettlebell-sessioni-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJSON(){
+  const input=document.createElement("input");
+  input.type="file";
+  input.accept=".json";
+  input.onchange=e=>{
+    const file=e.target.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const data=JSON.parse(ev.target.result);
+        if(!data.history)throw new Error("File non valido");
+        const merge=confirm(
+          `Trovate ${data.history.length} sessioni.\n\nTOCCA OK per UNIRE con i dati attuali.\nTOCCA ANNULLA per SOSTITUIRE tutto.`
+        );
+        if(merge){
+          // Unisce evitando duplicati per data+giorno
+          const existing=new Set(state.history.map(h=>h.date+"_"+h.day));
+          const newEntries=data.history.filter(h=>!existing.has(h.date+"_"+h.day));
+          state.history=[...state.history,...newEntries];
+        } else {
+          state.history=data.history;
+          if(data.axeHistory)state.axeHistory=data.axeHistory;
+          if(data.axeProgress)state.axeProgress=data.axeProgress;
+          if(data.activeProgram)state.activeProgram=data.activeProgram;
+        }
+        saveHistory();
+        localStorage.setItem("kb-axe-history",JSON.stringify(state.axeHistory));
+        localStorage.setItem("kb-axe-progress",JSON.stringify(state.axeProgress));
+        if(state.activeProgram)localStorage.setItem("kb-active-program",JSON.stringify(state.activeProgram));
+        alert(`Import completato! ${state.history.length} sessioni totali.`);
+        render();
+      }catch(err){
+        alert("Errore nel file: "+err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 }
 
 function activateProgram(type,id){
