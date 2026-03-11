@@ -582,6 +582,14 @@ let state={
   },
   // persistent
   history:JSON.parse(localStorage.getItem("kb-history-v2")||"[]"),
+  externalHistory:JSON.parse(localStorage.getItem("kb-external-history")||"[]"),
+  statsFilter:"all",
+  logExtForm:{type:"Calisthenics",duration:"",hrAvg:"",hrMax:"",feeling:null,notes:""},
+  showExtForm:false,
+  externalHistory:JSON.parse(localStorage.getItem("kb-external-history")||"[]"),
+  statsFilter:"all",
+  logExtForm:{type:"Calisthenics",duration:"",hrAvg:"",hrMax:"",feeling:null,notes:""},
+  showExtForm:false,
   axeHistory:JSON.parse(localStorage.getItem("kb-axe-history")||"[]"),
   axeProgress:JSON.parse(localStorage.getItem("kb-axe-progress")||JSON.stringify({
     repsPerSet:4,currentSets:0,stepRPE:8,phase:"fase 1",
@@ -596,6 +604,8 @@ function fmtTime(s){return `${String(Math.floor(s/60)).padStart(2,"0")}:${String
 function getTodaySuggested(){const d=new Date().getDay();return d===1?"A":d===3?"B":d===6?"C":null;}
 function dayLabel(){return["Dom","Lun","Mar","Mer","Gio","Ven","Sab"][new Date().getDay()];}
 function saveHistory(){localStorage.setItem("kb-history-v2",JSON.stringify(state.history));}
+function saveExternalHistory(){localStorage.setItem("kb-external-history",JSON.stringify(state.externalHistory));}
+function saveExternalHistory(){localStorage.setItem("kb-external-history",JSON.stringify(state.externalHistory));}
 function saveAxeHistory(){localStorage.setItem("kb-axe-history",JSON.stringify(state.axeHistory));}
 function saveAxeProgress(){localStorage.setItem("kb-axe-progress",JSON.stringify(state.axeProgress));}
 function saveActiveProgram(){localStorage.setItem("kb-active-program",JSON.stringify(state.activeProgram));}
@@ -901,43 +911,46 @@ function renderDone(){
 
 // ── RENDER LOG ────────────────────────────────────────────────────────────────
 function renderLog(){
+  const filter=state.statsFilter; // "all" | "kb" | "external"
   const hist=state.history;
+  const extHist=state.externalHistory;
 
-  // ── Calcola statistiche ──
-  // Frequenza settimanale (ultime 4 settimane)
+  // Sessioni visibili in lista
+  const allSessions=[
+    ...hist.map(h=>({...h,_src:"kb"})),
+    ...extHist.map(h=>({...h,_src:"ext"}))
+  ].sort((a,b)=>{
+    const parse=s=>{const[d,m,y]=s.date.split("/").map(Number);return new Date(y,m-1,d);};
+    return parse(b)-parse(a);
+  });
+  const visibleSessions=filter==="kb"?allSessions.filter(h=>h._src==="kb")
+    :filter==="external"?allSessions.filter(h=>h._src==="ext")
+    :allSessions;
+
+  // ── KPI su tutti gli allenamenti KB ──
   const now=new Date();
   function getWeekNum(dateStr){
-    // dateStr: "dd/mm/yyyy"
     const [d,m,y]=dateStr.split("/").map(Number);
     const dt=new Date(y,m-1,d);
-    const diff=(now-dt)/(1000*60*60*24*7);
-    return Math.floor(diff);
+    return Math.floor((now-dt)/(1000*60*60*24*7));
   }
-  const weekCounts=[0,0,0,0]; // settimana corrente, -1, -2, -3
-  hist.forEach(h=>{
-    const w=getWeekNum(h.date);
-    if(w>=0&&w<4)weekCounts[w]++;
-  });
+  const allForKPI=[...hist,...extHist];
+  const weekCounts=[0,0,0,0];
+  allForKPI.forEach(h=>{const w=getWeekNum(h.date);if(w>=0&&w<4)weekCounts[w]++;});
   const weekLabels=["Questa","–1 sett","–2 sett","–3 sett"];
   const maxWC=Math.max(...weekCounts,1);
 
-  // Distribuzione A/B/C
   const dist={A:0,B:0,C:0};
   hist.forEach(h=>{if(dist[h.day]!==undefined)dist[h.day]++;});
   const total=hist.length||1;
 
-  // Trend HR media (ultime 8 sessioni con HR)
   const hrData=hist.filter(h=>h.hrAvg).slice(-8);
-
-  // Progressione peso (ultime 8 sessioni con peso)
   const wData=hist.filter(h=>h.weight).slice(-8);
-
-  // Stat generali
   const avgDur=hist.length?Math.round(hist.reduce((s,h)=>s+(h.duration||0),0)/hist.length):0;
   const lastWeight=wData.length?wData[wData.length-1].weight:"—";
   const avgHR=hrData.length?Math.round(hrData.reduce((s,h)=>s+Number(h.hrAvg),0)/hrData.length):"—";
 
-  // ── Mini bar chart frequenza settimanale ──
+  // ── Bar chart ──
   const barColors=["#2196F3","#1565C0","#0D47A1","#0A2E6E"];
   const weekBars=weekCounts.map((c,i)=>{
     const h=c>0?Math.round((c/maxWC)*52)+4:4;
@@ -947,7 +960,7 @@ function renderLog(){
     </div>`;
   }).join("");
 
-  // ── Donut distribuzione ──
+  // ── Donut ──
   function describeArc(cx,cy,r,startAngle,endAngle){
     const s={x:cx+r*Math.cos(startAngle),y:cy+r*Math.sin(startAngle)};
     const e={x:cx+r*Math.cos(endAngle),y:cy+r*Math.sin(endAngle)};
@@ -958,44 +971,33 @@ function renderLog(){
   let angle=-Math.PI/2;
   const slices=Object.entries(dist).filter(([,v])=>v>0).map(([k,v])=>{
     const sweep=(v/total)*2*Math.PI;
-    const path=describeArc(44,44,36,angle,angle+sweep);
+    const path=describeArc(60,60,48,angle,angle+sweep);
     angle+=sweep;
     return `<path d="${path}" fill="${dayColors[k]}"/>`;
-  }).join("");
-  const donutSVG=`<svg width="88" height="88" viewBox="0 0 88 88">
-    ${total>1?slices:`<circle cx="44" cy="44" r="36" fill="#1E2A35"/>`}
-    <circle cx="44" cy="44" r="22" fill="#080C0F"/>
-    <text x="44" y="48" text-anchor="middle" fill="#F0F4F8" font-family="'Bebas Neue',sans-serif" font-size="18">${hist.length}</text>
+  });
+  const donutSVG=`<svg width="120" height="120" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="48" fill="#0F1419"/>
+    ${slices.join("")}
+    <circle cx="60" cy="60" r="28" fill="#080C0F"/>
   </svg>`;
   const donutLegend=Object.entries(dist).map(([k,v])=>`
-    <div class="donut-leg-item">
-      <div class="donut-leg-dot" style="background:${dayColors[k]}"></div>
-      <span style="color:${dayColors[k]};font-weight:700">Giorno ${k}</span>
-      <span style="color:var(--muted);margin-left:auto">${v} · ${Math.round(v/total*100)}%</span>
+    <div style="display:flex;align-items:center;gap:6px;font-size:13px;">
+      <div style="width:10px;height:10px;border-radius:3px;background:${dayColors[k]}"></div>
+      <span style="color:#607080">Giorno ${k}</span>
+      <span style="font-weight:700;margin-left:auto">${v}</span>
     </div>`).join("");
 
-  // ── HR trend SVG ──
+  // ── HR trend ──
   let hrTrendHTML="";
   if(hrData.length>=2){
     const vals=hrData.map(h=>Number(h.hrAvg));
     const mn=Math.min(...vals)-5,mx=Math.max(...vals)+5;
     const W=300,H=60;
-    const pts=vals.map((v,i)=>{
-      const x=i/(vals.length-1)*W;
-      const y=H-((v-mn)/(mx-mn))*H;
-      return `${x},${y}`;
-    });
-    hrTrendHTML=`<div class="hr-chart">
-      <svg class="hr-line-svg" viewBox="0 0 300 60" preserveAspectRatio="none">
-        <polyline points="${pts.join(" ")}" fill="none" stroke="#EF5350" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        ${vals.map((v,i)=>{
-          const x=i/(vals.length-1)*W;
-          const y=H-((v-mn)/(mx-mn))*H;
-          return `<circle cx="${x}" cy="${y}" r="4" fill="#EF5350"/>
-            <text x="${x}" y="${y-8}" text-anchor="middle" fill="#EF5350" font-family="'DM Sans',sans-serif" font-size="9">${v}</text>`;
-        }).join("")}
-      </svg>
-    </div>`;
+    const pts=vals.map((v,i)=>{const x=i/(vals.length-1)*W;const y=H-((v-mn)/(mx-mn))*H;return `${x},${y}`;});
+    hrTrendHTML=`<div class="hr-chart"><svg class="hr-line-svg" viewBox="0 0 300 60" preserveAspectRatio="none">
+      <polyline points="${pts.join(" ")}" fill="none" stroke="#EF5350" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      ${vals.map((v,i)=>{const x=i/(vals.length-1)*W;const y=H-((v-mn)/(mx-mn))*H;return `<circle cx="${x}" cy="${y}" r="4" fill="#EF5350"/><text x="${x}" y="${y-8}" text-anchor="middle" fill="#EF5350" font-family="'DM Sans',sans-serif" font-size="9">${v}</text>`;}).join("")}
+    </svg></div>`;
   }
 
   // ── Peso trend ──
@@ -1004,83 +1006,129 @@ function renderLog(){
     const vals=wData.map(h=>Number(h.weight));
     const mn=Math.min(...vals)-2,mx=Math.max(...vals)+2;
     const W=300,H=60;
-    const pts=vals.map((v,i)=>{
-      const x=i/(vals.length-1)*W;
-      const y=H-((v-mn)/(mx-mn))*H;
-      return `${x},${y}`;
-    });
-    wTrendHTML=`<div class="hr-chart">
-      <svg class="hr-line-svg" viewBox="0 0 300 60" preserveAspectRatio="none">
-        <polyline points="${pts.join(" ")}" fill="none" stroke="#9C27B0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        ${vals.map((v,i)=>{
-          const x=i/(vals.length-1)*W;
-          const y=H-((v-mn)/(mx-mn))*H;
-          return `<circle cx="${x}" cy="${y}" r="4" fill="#9C27B0"/>
-            <text x="${x}" y="${y-8}" text-anchor="middle" fill="#CE93D8" font-family="'DM Sans',sans-serif" font-size="9">${v} kg</text>`;
-        }).join("")}
-      </svg>
-    </div>`;
+    const pts=vals.map((v,i)=>{const x=i/(vals.length-1)*W;const y=H-((v-mn)/(mx-mn))*H;return `${x},${y}`;});
+    wTrendHTML=`<div class="hr-chart"><svg class="hr-line-svg" viewBox="0 0 300 60" preserveAspectRatio="none">
+      <polyline points="${pts.join(" ")}" fill="none" stroke="#9C27B0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      ${vals.map((v,i)=>{const x=i/(vals.length-1)*W;const y=H-((v-mn)/(mx-mn))*H;return `<circle cx="${x}" cy="${y}" r="4" fill="#9C27B0"/><text x="${x}" y="${y-8}" text-anchor="middle" fill="#CE93D8" font-family="'DM Sans',sans-serif" font-size="9">${v} kg</text>`;}).join("")}
+    </svg></div>`;
   }
 
   // ── Lista sessioni ──
-  const feelLabel={
-    "😫":"😫 Pesante","😐":"😐 Normale","💪":"💪 Bene","🔥":"🔥 Ottimo"
-  };
+  const feelLabel={"😫":"😫 Pesante","😐":"😐 Normale","💪":"💪 Bene","🔥":"🔥 Ottimo"};
   const talkLabel={"ok":"✅ Parlato OK","fail":"❌ Affannato","na":"— Non testato"};
+  const EXT_COLORS={"Calisthenics":"#00BFA5","Corsa":"#FF5722","Yoga":"#9C27B0","Ciclismo":"#2196F3","Nuoto":"#0097A7","Calcio":"#43A047","Altro":"#607080"};
 
-  const sessionList=hist.length===0
-    ?`<div class="empty-state">
-        <div class="empty-icon">📋</div>
-        <div class="empty-text">Nessun allenamento salvato.<br>Completa il primo workout<br>per iniziare a tracciare i progressi.</div>
-      </div>`
-    :hist.slice().reverse().map((h,ri)=>{
-        const i=hist.length-1-ri;
+  const sessionList=visibleSessions.length===0
+    ?`<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Nessun allenamento trovato.</div></div>`
+    :visibleSessions.map((h,ri)=>{
+        const isExt=h._src==="ext";
+        const realIdx=isExt
+          ?state.externalHistory.findIndex(e=>e.date===h.date&&e.type===h.type&&e.duration===h.duration)
+          :state.history.findIndex(e=>e.date===h.date&&e.day===h.day&&e.duration===h.duration);
+        const editKey=isExt?`ext_${realIdx}`:`kb_${realIdx}`;
+        const isEditing=state.editingEntry===editKey;
         const chips=[];
-        if(h.weight)chips.push(`<span class="log-chip">⚖️ ${h.weight} kg</span>`);
+        if(h.duration)chips.push(`<span class="log-chip">⏱ ${h.duration}'</span>`);
         if(h.hrAvg)chips.push(`<span class="log-chip" style="border-color:#EF535040;color:#EF5350">❤️ ${h.hrAvg} bpm avg</span>`);
         if(h.hrMax)chips.push(`<span class="log-chip" style="border-color:#EF535040;color:#FF8A80">🔺 ${h.hrMax} bpm max</span>`);
-        if(h.duration)chips.push(`<span class="log-chip">⏱ ${h.duration}'</span>`);
+        if(!isExt&&h.weight)chips.push(`<span class="log-chip">⚖️ ${h.weight} kg</span>`);
         if(h.feeling)chips.push(`<span class="log-chip">${feelLabel[h.feeling]||h.feeling}</span>`);
-        if(h.talkTest&&h.talkTest!=="na")chips.push(`<span class="log-chip">${talkLabel[h.talkTest]}</span>`);
+        if(!isExt&&h.talkTest&&h.talkTest!=="na")chips.push(`<span class="log-chip">${talkLabel[h.talkTest]}</span>`);
         const noteHTML=h.notes?`<div class="log-entry-note">"${h.notes}"</div>`:"";
-        const warmupHTML=h.warmup&&h.warmup.length?`<div style="font-size:11px;color:#00BFA5;margin-top:4px;">🌀 Warm-up: ${h.warmup.join(", ")}</div>`:"";
-        const isEditing=state.editingEntry===i;
+        const warmupHTML=!isExt&&h.warmup&&h.warmup.length?`<div style="font-size:11px;color:#00BFA5;margin-top:4px;">🌀 Warm-up: ${h.warmup.join(", ")}</div>`:"";
+        const entryColor=isExt?(EXT_COLORS[h.type]||"#607080"):dayColor(h.day);
+        const entryLabel=isExt?`🏃 ${h.type}`:`Giorno ${h.day}${h.partial?" · ⏹ Parziale":""}`;
+
         const editForm=isEditing?`
-          <div style="margin-top:10px;padding:10px;background:#0A0F12;border-radius:10px;border:1px solid #1E2A35;">
-            <div style="font-size:10px;letter-spacing:2px;color:#607080;margin-bottom:8px;">MODIFICA</div>
+          <div style="margin-top:10px;padding:12px;background:#0A0F12;border-radius:10px;border:1px solid #1E2A35;">
+            <div style="font-size:10px;letter-spacing:2px;color:#607080;margin-bottom:10px;">MODIFICA</div>
             <div style="display:flex;gap:8px;margin-bottom:8px;">
-              <input class="log-input" type="number" placeholder="HR media" value="${h.hrAvg||''}"
-                oninput="editEntryField(${i},'hrAvg',this.value)" inputmode="numeric" style="flex:1;"/>
-              <input class="log-input" type="number" placeholder="HR max" value="${h.hrMax||''}"
-                oninput="editEntryField(${i},'hrMax',this.value)" inputmode="numeric" style="flex:1;"/>
+              <div style="flex:1;"><label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">HR MEDIA</label>
+              <input class="log-input" type="number" placeholder="bpm" value="${h.hrAvg||''}"
+                onchange="editEntryField('${editKey}','hrAvg',this.value)" inputmode="numeric"/></div>
+              <div style="flex:1;"><label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">HR MAX</label>
+              <input class="log-input" type="number" placeholder="bpm" value="${h.hrMax||''}"
+                onchange="editEntryField('${editKey}','hrMax',this.value)" inputmode="numeric"/></div>
             </div>
+            <label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">NOTE</label>
             <input class="log-input" type="text" placeholder="Note..." value="${h.notes||''}"
-              oninput="editEntryField(${i},'notes',this.value)" style="width:100%;margin-bottom:8px;"/>
-            <button onclick="closeEdit()" style="width:100%;padding:8px;background:#00BFA5;color:#000;border-radius:8px;font-weight:700;font-size:13px;">✓ Fatto</button>
+              onchange="editEntryField('${editKey}','notes',this.value)" style="width:100%;margin-bottom:10px;"/>
+            <button onclick="closeEdit()" style="width:100%;padding:10px;background:#00BFA5;color:#000;border-radius:8px;font-weight:700;font-size:13px;">✓ Chiudi</button>
           </div>`:"";
-        return `<div class="log-entry" style="border-color:${dayColor(h.day)}22">
+
+        return `<div class="log-entry" style="border-color:${entryColor}22">
           <div class="log-entry-header">
             <div>
-              <div class="log-entry-day" style="color:${dayColor(h.day)}">Giorno ${h.day}${h.partial?' · ⏹ Parziale':''}${isEditing?' · <span style="color:#FFC107;font-size:11px;">✏️ in modifica</span>':''}</div>
+              <div class="log-entry-day" style="color:${entryColor}">${entryLabel}</div>
               <div class="log-entry-date">${h.date}</div>
             </div>
             <div style="display:flex;gap:6px;align-items:center;">
-              <button onclick="openEdit(${i})" style="font-size:14px;background:none;color:#607080;padding:4px 6px;">✏️</button>
-              <button class="log-del-btn" onclick="deleteEntry(${i})" title="Elimina">🗑</button>
+              <button onclick="openEdit('${editKey}')" style="font-size:14px;background:none;color:#607080;padding:4px 6px;">✏️</button>
+              <button class="log-del-btn" onclick="deleteEntryByKey('${editKey}')" title="Elimina">🗑</button>
             </div>
           </div>
           <div class="log-entry-chips">${chips.join("")}</div>
-          ${warmupHTML}
-          ${noteHTML}
-          ${editForm}
+          ${warmupHTML}${noteHTML}${editForm}
         </div>`;
       }).join("");
+
+  // ── Form log esterno ──
+  const ef=state.logExtForm;
+  const extTypes=["Calisthenics","Corsa","Yoga","Ciclismo","Nuoto","Calcio","Altro"];
+  const feelingOpts=[{v:"😫",label:"Pesante"},{v:"😐",label:"Normale"},{v:"💪",label:"Bene"},{v:"🔥",label:"Ottimo"}];
+  const extFormHTML=state.showExtForm?`
+    <div style="margin:0 18px 16px;padding:16px;background:#0F1419;border:1.5px solid #1E2A35;border-radius:16px;">
+      <div style="font-size:11px;letter-spacing:2px;color:#607080;margin-bottom:12px;">TIPO ATTIVITÀ</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+        ${extTypes.map(t=>`<div onclick="setExtField('type','${t}')"
+          style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;
+          border:1.5px solid ${ef.type===t?(EXT_COLORS[t]||"#607080"):"#1E2A35"};
+          background:${ef.type===t?"#0A0F12":"transparent"};
+          color:${ef.type===t?(EXT_COLORS[t]||"#F0F4F8"):"#607080"};">${t}</div>`).join("")}
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <div style="flex:1;"><label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">DURATA (min)</label>
+        <input class="log-input" type="number" placeholder="45" value="${ef.duration}"
+          oninput="setExtField('duration',this.value)" inputmode="numeric"/></div>
+        <div style="flex:1;"><label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">HR MEDIA</label>
+        <input class="log-input" type="number" placeholder="bpm" value="${ef.hrAvg}"
+          oninput="setExtField('hrAvg',this.value)" inputmode="numeric"/></div>
+        <div style="flex:1;"><label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">HR MAX</label>
+        <input class="log-input" type="number" placeholder="bpm" value="${ef.hrMax}"
+          oninput="setExtField('hrMax',this.value)" inputmode="numeric"/></div>
+      </div>
+      <div style="font-size:10px;color:#607080;margin-bottom:6px;">SENSAZIONE</div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        ${feelingOpts.map(o=>`<div onclick="setExtField('feeling','${o.v}')"
+          style="flex:1;text-align:center;padding:8px 4px;border-radius:10px;cursor:pointer;font-size:18px;
+          border:1.5px solid ${ef.feeling===o.v?"#FFC107":"#1E2A35"};
+          background:${ef.feeling===o.v?"#1A1500":"transparent"};">${o.v}</div>`).join("")}
+      </div>
+      <label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">NOTE</label>
+      <input class="log-input" type="text" placeholder="Es. LeoMoves Upper, corsa lenta..." value="${ef.notes}"
+        oninput="setExtField('notes',this.value)" style="width:100%;margin-bottom:12px;"/>
+      <div style="display:flex;gap:8px;">
+        <button onclick="state.showExtForm=false;render()" style="flex:1;padding:11px;background:#0A0F12;border:1px solid #1E2A35;color:#607080;border-radius:10px;font-weight:700;">Annulla</button>
+        <button onclick="saveExternalSession()" style="flex:2;padding:11px;background:#00BFA5;color:#000;border-radius:10px;font-weight:700;">💾 Salva</button>
+      </div>
+    </div>`:"";
+
+  // ── Filtro tabs ──
+  const filterTabs=[
+    {id:"all",label:"Tutti"},
+    {id:"kb",label:"🏋️ Kettlebell"},
+    {id:"external",label:"🏃 Altri"},
+  ].map(f=>`<button onclick="setStatsFilter('${f.id}')"
+    style="flex:1;padding:9px 4px;font-size:12px;font-weight:700;border-radius:10px;
+    background:${filter===f.id?"#1E2A35":"transparent"};
+    color:${filter===f.id?"#F0F4F8":"#607080"};
+    border:1.5px solid ${filter===f.id?"#2E3A45":"transparent"};">${f.label}</button>`).join("");
 
   return `<div class="screen">
     <div class="log-page">
       <div class="log-header">
         <div class="log-header-title">STATISTICHE</div>
-        <div class="log-header-sub">${hist.length} sessioni registrate</div>
+        <div class="log-header-sub">${hist.length + extHist.length} sessioni totali</div>
       </div>
 
       <!-- KPI row -->
@@ -1091,12 +1139,12 @@ function renderLog(){
           <div class="stat-sub">allenamenti</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">DURATA MEDIA</div>
+          <div class="stat-label">DURATA MEDIA KB</div>
           <div class="stat-val" style="color:#FF5722">${avgDur || "—"}</div>
-          <div class="stat-sub">${avgDur?"minuti":""}</div>
+          <div class="stat-sub">${avgDur?"min":""}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">HR MEDIA</div>
+          <div class="stat-label">HR MEDIA KB</div>
           <div class="stat-val" style="color:#EF5350">${avgHR}</div>
           <div class="stat-sub">${avgHR!=="—"?"bpm":""}</div>
         </div>
@@ -1110,59 +1158,55 @@ function renderLog(){
       <!-- Frequenza settimanale -->
       <div class="stat-cards">
         <div class="stat-card full">
-          <div class="stat-label">FREQUENZA SETTIMANALE</div>
+          <div class="stat-label">FREQUENZA SETTIMANALE (tutti)</div>
           <div class="mini-bars">${weekBars}</div>
         </div>
       </div>
 
-      <!-- Distribuzione + HR trend -->
+      <!-- Distribuzione KB + HR trend -->
       <div class="stat-cards">
         <div class="stat-card full">
-          <div class="stat-label">DISTRIBUZIONE GIORNI</div>
-          <div class="donut-wrap">
-            ${donutSVG}
-            <div class="donut-legend">${donutLegend}</div>
-          </div>
+          <div class="stat-label">DISTRIBUZIONE GIORNI KB</div>
+          <div class="donut-wrap">${donutSVG}<div class="donut-legend">${donutLegend}</div></div>
         </div>
       </div>
 
-      ${hrData.length>=2?`<div class="stat-cards">
-        <div class="stat-card full">
-          <div class="stat-label">TREND HR MEDIA (ultime ${hrData.length} sessioni)</div>
-          ${hrTrendHTML}
-        </div>
-      </div>`:""}
+      ${hrData.length>=2?`<div class="stat-cards"><div class="stat-card full">
+        <div class="stat-label">TREND HR MEDIA KB (ultime ${hrData.length})</div>${hrTrendHTML}
+      </div></div>`:""}
 
-      ${wData.length>=2?`<div class="stat-cards">
-        <div class="stat-card full">
-          <div class="stat-label">PROGRESSIONE PESO KB</div>
-          ${wTrendHTML}
-        </div>
-      </div>`:""}
+      ${wData.length>=2?`<div class="stat-cards"><div class="stat-card full">
+        <div class="stat-label">PROGRESSIONE PESO KB</div>${wTrendHTML}
+      </div></div>`:""}
 
-      <!-- Lista sessioni -->
+      <!-- Aggiungi allenamento esterno -->
+      <div style="padding:0 18px 12px;display:flex;gap:8px;align-items:center;">
+        <div style="font-size:11px;letter-spacing:2px;color:#607080;flex:1;">SESSIONI</div>
+        <button onclick="state.showExtForm=!state.showExtForm;render()"
+          style="padding:8px 14px;background:#0F1419;border:1.5px solid #1E2A35;border-radius:10px;color:#00BFA5;font-size:12px;font-weight:700;">
+          ${state.showExtForm?"✕ Chiudi":"＋ Aggiungi altro allenamento"}</button>
+      </div>
+
+      ${extFormHTML}
+
+      <!-- Filtro -->
+      <div style="display:flex;gap:6px;padding:0 18px 14px;">${filterTabs}</div>
+
+      <!-- Lista -->
       <div class="log-list-header">
-        <div class="log-list-title">TUTTE LE SESSIONI</div>
-        ${hist.length>0?`<button class="log-clear-btn" onclick="clearAll()">Cancella tutto</button>`:""}
+        <div class="log-list-title">${visibleSessions.length} sessioni</div>
+        ${allSessions.length>0?`<button class="log-clear-btn" onclick="clearAll()">Cancella tutto</button>`:""}
       </div>
       ${sessionList}
+
       <div style="padding:18px 18px 6px;">
         <div style="font-size:10px;letter-spacing:2px;color:#607080;margin-bottom:10px;">BACKUP DATI</div>
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <button onclick="exportJSON()" style="padding:13px;border-radius:12px;background:#0F1419;border:1.5px solid #1E2A35;color:#00BFA5;font-weight:700;font-size:14px;text-align:left;">
-            📦 Esporta backup completo (JSON)
-          </button>
-          <button onclick="exportCSV()" style="padding:13px;border-radius:12px;background:#0F1419;border:1.5px solid #1E2A35;color:#2196F3;font-weight:700;font-size:14px;text-align:left;">
-            📊 Esporta sessioni (CSV per Excel)
-          </button>
-          <button onclick="importJSON()" style="padding:13px;border-radius:12px;background:#0F1419;border:1.5px solid #1E2A35;color:#FFC107;font-weight:700;font-size:14px;text-align:left;">
-            📥 Importa backup (JSON)
-          </button>
+          <button onclick="exportJSON()" style="padding:13px;border-radius:12px;background:#0F1419;border:1.5px solid #1E2A35;color:#00BFA5;font-weight:700;font-size:14px;text-align:left;">📦 Esporta backup completo (JSON)</button>
+          <button onclick="exportCSV()" style="padding:13px;border-radius:12px;background:#0F1419;border:1.5px solid #1E2A35;color:#2196F3;font-weight:700;font-size:14px;text-align:left;">📊 Esporta sessioni (CSV per Excel)</button>
+          <button onclick="importJSON()" style="padding:13px;border-radius:12px;background:#0F1419;border:1.5px solid #1E2A35;color:#FFC107;font-weight:700;font-size:14px;text-align:left;">📥 Importa backup (JSON)</button>
         </div>
-        <div style="font-size:11px;color:#3A4A55;margin-top:8px;line-height:1.6;">
-          Il backup JSON include sessioni, storico AXE e progressione.<br>
-          Il CSV è leggibile su Excel / Google Sheets.
-        </div>
+        <div style="font-size:11px;color:#3A4A55;margin-top:8px;line-height:1.6;">Il backup JSON include sessioni, storico AXE e progressione.</div>
       </div>
       <div style="height:20px"></div>
     </div>
@@ -1988,22 +2032,61 @@ function toggleWarmup(name){
   render();
 }
 
-function openEdit(i){
-  state.editingEntry=i;
-  localStorage.setItem("kb-editing-entry",String(i));
+function setStatsFilter(f){state.statsFilter=f;render();}
+
+function setExtField(field,val){
+  state.logExtForm[field]=val;
+  if(field==="type"||field==="feeling")render();
+}
+
+function saveExternalSession(){
+  const ef=state.logExtForm;
+  if(!ef.duration){alert("Inserisci almeno la durata.");return;}
+  const entry={
+    type:ef.type||"Altro",
+    date:new Date().toLocaleDateString("it-IT"),
+    duration:Number(ef.duration)||null,
+    hrAvg:ef.hrAvg?Number(ef.hrAvg):null,
+    hrMax:ef.hrMax?Number(ef.hrMax):null,
+    feeling:ef.feeling||null,
+    notes:ef.notes||"",
+  };
+  state.externalHistory.push(entry);
+  saveExternalHistory();
+  state.logExtForm={type:"Calisthenics",duration:"",hrAvg:"",hrMax:"",feeling:null,notes:""};
+  state.showExtForm=false;
+  render();
+}
+
+function deleteEntryByKey(key){
+  if(!confirm("Elimina questa sessione?"))return;
+  const [src,idx]=[key.split("_")[0],Number(key.split("_")[1])];
+  if(src==="kb"){state.history.splice(idx,1);saveHistory();}
+  else{state.externalHistory.splice(idx,1);saveExternalHistory();}
+  state.editingEntry=null;
+  render();
+}
+
+function openEdit(key){
+  state.editingEntry=key;
   render();
 }
 function closeEdit(){
-  saveHistory();
   state.editingEntry=null;
-  localStorage.removeItem("kb-editing-entry");
   render();
 }
-function editEntryField(i,field,val){
+function editEntryField(key,field,val){
+  const [src,idx]=[key.split("_")[0],Number(key.split("_")[1])];
   const num=field==='hrAvg'||field==='hrMax';
-  state.history[i][field]=num?(val===''?null:Number(val)):val;
-  // salva in background senza re-render per non perdere il focus
-  localStorage.setItem("kb-history-v2",JSON.stringify(state.history));
+  const parsed=num?(val===''?null:Number(val)):val;
+  if(src==="kb"){
+    state.history[idx][field]=parsed;
+    saveHistory();
+  } else {
+    state.externalHistory[idx][field]=parsed;
+    saveExternalHistory();
+  }
+  // niente re-render: l'input onchange salva in background
 }
 
 // ── EXPORT / IMPORT ──────────────────────────────────────────────────────────
