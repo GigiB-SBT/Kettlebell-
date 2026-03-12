@@ -391,6 +391,30 @@ const EXERCISES={
   "Front Squat":       {reps:"da posizione rack",yt:"https://www.youtube.com/results?search_query=kettlebell+front+squat+tutorial",cue:"KB già in rack dal clean — squat profondo, ginocchia fuori"},
   "Push Press":        {reps:"poi cambia lato",yt:"https://www.youtube.com/results?search_query=kettlebell+push+press+tutorial",cue:"Dip & drive dal rack — lockout completo — poi ripeti DX"},
   "AMRAP 6'":          {reps:"Max round",yt:null,cue:"Intensità controllata, tecnica prima di tutto"},
+  // ── EXTRA workouts ───────────────────────────────────────────────────────────
+  "KB Swing Bimanuale":    {reps:"10–20 rip",yt:"https://www.youtube.com/results?search_query=kettlebell+swing+hardstyle+tutorial",cue:"Anca esplosiva, schiena neutra"},
+  "Swing Bimanuale":       {reps:"15–20 rip",yt:"https://www.youtube.com/results?search_query=kettlebell+swing+hardstyle+tutorial",cue:"Anca esplosiva, schiena neutra"},
+  "KB Row":                {reps:"8 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+single+arm+row+tutorial",cue:"Staggered stance, tira verso l'anca"},
+  "Plank KB Drag":         {reps:"10 drag dx→sx",yt:"https://www.youtube.com/results?search_query=plank+kettlebell+drag+tutorial",cue:"Plank alto, niente rotazione fianchi"},
+  "Reverse Lunge + Pass":  {reps:"8 tot",yt:"https://www.youtube.com/results?search_query=reverse+lunge+kettlebell+pass+tutorial",cue:"Passo indietro, passa KB, torna su"},
+  "Recupero attivo":       {reps:"Recupero",yt:null,cue:"Cammina, respira — KB a terra"},
+  "Recupero":              {reps:"Recupero",yt:null,cue:"Respira — prossimo round in arrivo"},
+  "Pausa blocco":          {reps:"Recupero",yt:null,cue:"Respira — prossimo blocco in arrivo"},
+  "Pausa tra blocchi":     {reps:"Recupero",yt:null,cue:"Respira — prossimo blocco in arrivo"},
+  "Cambio lato":           {reps:"15\"",yt:null,cue:"Passa la KB alla mano opposta"},
+  "Sumo Deadlift":         {reps:"10–12 rip",yt:"https://www.youtube.com/results?search_query=kettlebell+sumo+deadlift+tutorial",cue:"Piedi larghi, punte a 45° — spingi il pavimento"},
+  "Renegade Row":          {reps:"8 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+renegade+row+tutorial",cue:"Plank rigido — tira verso l'anca non la spalla"},
+  "Goblet Squat Jump":     {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=goblet+squat+jump+kettlebell+tutorial",cue:"Squat profondo → spingi il suolo → atterra morbido"},
+  "KB Snatch":             {reps:"5 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+snatch+tutorial+technique",cue:"Traiettoria verticale — KB vicina al corpo"},
+  "KB Halo":               {reps:"5 giri/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+halo+exercise+tutorial",cue:"KB capovolta — cerchio stretto, spalle basse"},
+  "KB Clean":              {reps:"8 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+clean+technique+tutorial",cue:"Rack pulito — gomito a corpo, zero oscillazione"},
+  "Push Press Alternato":  {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=kettlebell+push+press+alternating+tutorial",cue:"Dip & drive — lockout duro, alterna lati"},
+  "Burpee":                {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=burpee+perfect+form+tutorial",cue:"Plank → push-up → salto — ritmo costante"},
+  "Burpee + KB Deadlift":  {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=burpee+kettlebell+deadlift+combo",cue:"Burpee → in piedi → 1 deadlift KB = 1 rep"},
+  "Mountain Climber":      {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=mountain+climber+exercise+tutorial",cue:"Plank alto — ginocchia veloci, fianchi giù"},
+  "Squat Jump":            {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=squat+jump+tutorial+form",cue:"Squat → spingi il suolo → atterra con ginocchia morbide"},
+  "Clean → Squat → Press (SX)":{reps:"Max triplette",yt:"https://www.youtube.com/results?search_query=kettlebell+clean+squat+press+complex+tutorial",cue:"Clean → rack → squat → press → riabbassa"},
+  "Clean → Squat → Press (DX)":{reps:"Max triplette",yt:"https://www.youtube.com/results?search_query=kettlebell+clean+squat+press+complex+tutorial",cue:"Clean → rack → squat → press → riabbassa"},
 };
 
 function buildDayA(){
@@ -634,6 +658,7 @@ function navHTML(active){
   const tabs=[
     {id:"home",icon:"🏠",label:"HOME"},
     {id:"axe",icon:"🪓",label:"AXE"},
+    {id:"extra",icon:"⚡",label:"EXTRA"},
     {id:"programs",icon:"📋",label:"PROGRAMMI"},
     {id:"log",icon:"📊",label:"STATS"},
   ];
@@ -760,6 +785,27 @@ function renderWorkout(){
   const videoBtn=ex.yt?`<a href="${ex.yt}" target="_blank" class="btn-video">▶️ Video</a>`:"";
   const nextStyle=isLast?`background:#00BFA5;border-color:#00BFA5;color:#000;`:`background:#0F1419;border-color:#1E2A35;`;
 
+  // Player YouTube embed — solo step di lavoro (non rest), solo se ha video
+  function ytIdFromUrl(url){
+    if(!url)return null;
+    const m=url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    return m?m[1]:null;
+  }
+  const ytId=(!isRest&&ex.yt)?ytIdFromUrl(ex.yt):null;
+  const ytPlayer=ytId?`
+    <div style="margin:0 18px 10px;">
+      <div style="font-size:10px;letter-spacing:2px;color:#607080;margin-bottom:6px;">RIFERIMENTO ESERCIZIO <span style="color:#3A4A55;font-size:9px;">(audio in muto — tocca 🔊 per attivare)</span></div>
+      <div style="position:relative;width:100%;padding-bottom:56.25%;border-radius:12px;overflow:hidden;border:1px solid #1E2A35;">
+        <iframe
+          src="https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=1&modestbranding=1&rel=0&playsinline=1"
+          style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
+          allow="autoplay; encrypted-media"
+          allowfullscreen>
+        </iframe>
+      </div>
+    </div>`:"";
+
+
   // Banner esercizio successivo
   const nextStep_=seq[state.stepIdx+1];
   const nextBanner=(!isLast&&nextStep_)?`
@@ -807,9 +853,11 @@ function renderWorkout(){
     <div class="reps-wrap">
       <div class="reps-label" id="reps-label" style="color:${countdown?'#EF5350':accentColor}">${repsLabel}</div>
       ${ex.cue?`<div class="cue-text">"${ex.cue}"</div>`:""}
+      ${(!isRest&&ex.yt)?`<a href="${ex.yt}" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:#607080;border:1px solid #1E2A35;border-radius:6px;padding:4px 12px;text-decoration:none;">▶ Guarda tecnica</a>`:""}
     </div>
     ${amrapCard}
     ${timerBtns}
+    ${ytPlayer}
     ${nextBanner}
     <div class="action-btns">
       ${videoBtn}
@@ -1036,8 +1084,10 @@ function renderLog(){
         if(!isExt&&h.talkTest&&h.talkTest!=="na")chips.push(`<span class="log-chip">${talkLabel[h.talkTest]}</span>`);
         const noteHTML=h.notes?`<div class="log-entry-note">"${h.notes}"</div>`:"";
         const warmupHTML=!isExt&&h.warmup&&h.warmup.length?`<div style="font-size:11px;color:#00BFA5;margin-top:4px;">🌀 Warm-up: ${h.warmup.join(", ")}</div>`:"";
-        const entryColor=isExt?(EXT_COLORS[h.type]||"#607080"):dayColor(h.day);
-        const entryLabel=isExt?`🏃 ${h.type}`:`Giorno ${h.day}${h.partial?" · ⏹ Parziale":""}`;
+        const isExtra=!isExt&&h.day&&h.day.startsWith("extra_");
+        const extraW=isExtra?getExtraById(h.day.replace("extra_","")):{};
+        const entryColor=isExt?(EXT_COLORS[h.type]||"#607080"):isExtra?(extraW?.color||"#FF5722"):dayColor(h.day);
+        const entryLabel=isExt?`🏃 ${h.type}`:isExtra?`⚡ ${extraW?.label||h.day}${h.partial?" · ⏹ Parziale":""}`:`Giorno ${h.day}${h.partial?" · ⏹ Parziale":""}`;
 
         const editForm=isEditing?`
           <div style="margin-top:10px;padding:12px;background:#0A0F12;border-radius:10px;border:1px solid #1E2A35;">
@@ -1719,6 +1769,502 @@ function renderPrograms(){
   </div>`;
 }
 
+// ── RENDER EXTRA ──────────────────────────────────────────────────────────────
+// ── EXTRA WORKOUTS DATA ───────────────────────────────────────────────────────
+const EXTRA_WORKOUTS=[
+  {
+    id:"B2",label:"GIORNO B2",emoji:"⚡",color:"#FF5722",
+    title:"Complesso senza posare",
+    meta:"HIIT Complesso · ~22 min · 5 round",
+    totalMin:22,
+    how:"Esegui tutti gli esercizi in sequenza senza mai posare la KB. Il timer conta 40\" per esercizio con 20\" di rest. Dopo i 5 esercizi hai 60\" di recupero, poi riparte il round.",
+    structure:[
+      ["Formato","40\" lavoro / 20\" rest"],
+      ["Round","5"],
+      ["Recupero tra round","60\""],
+      ["Durata totale","~22 min"],
+    ],
+    exercises:[
+      {n:"1",name:"KB Swing Bimanuale",detail:"10 rep · potenza dai fianchi",t:"40\"",c:"#FF5722"},
+      {n:"2",name:"Clean + Press",detail:"5 sx + 5 dx · no pausa tra lati",t:"40\"",c:"#FF5722"},
+      {n:"3",name:"Goblet Squat",detail:"10 rep · pausa 1\" in basso",t:"40\"",c:"#FF5722"},
+      {n:"4",name:"KB Row",detail:"8 sx + 8 dx · gomito alto, schiena piatta",t:"40\"",c:"#FF5722"},
+      {n:"5",name:"Plank KB Drag",detail:"10 drag dx→sx · core rigido",t:"40\"",c:"#FF5722"},
+      {n:"R",name:"Recupero attivo",detail:"Respira, cammina sul posto",t:"60\"",c:"#1565C0"},
+    ],
+    tips:[
+      "KB Row: staggered stance, tira verso l'anca non il petto.",
+      "Plank Drag: in plank alto, trascina la KB sotto il corpo senza ruotare i fianchi.",
+      "Se perdi la forma sul Clean, posa e riprendi — meglio una pausa che farsi male."
+    ],
+    buildSeq:function(){
+      const seq=[];
+      const exNames=["KB Swing Bimanuale","Clean + Press","Goblet Squat","KB Row","Plank KB Drag"];
+      const cues=["Anca esplosiva, schiena dritta","Clean pulito, press verticale","Ginocchia fuori, pausa 1\" in basso","Gomito alto, schiena piatta","Core fisso, niente rotazione fianchi"];
+      const reps=["10 rep","5 sx + 5 dx","10 rep","8 sx + 8 dx","10 drag dx→sx"];
+      for(let r=1;r<=5;r++){
+        exNames.forEach((name,i)=>{
+          seq.push({name,round:r,totalRounds:5,timerSec:40,type:"work",
+            repsOverride:reps[i],cueOverride:cues[i]});
+          seq.push({name:"Rest",round:r,totalRounds:5,timerSec:20,type:"rest",
+            repsOverride:"Tieni la KB in mano",cueOverride:"Respira — non posare"});
+        });
+        seq.push({name:"Recupero attivo",round:r,totalRounds:5,timerSec:60,type:"rest",
+          repsOverride:"Cammina, respira",cueOverride:"KB a terra — round "+(r+1<6?"→ prossimo":"→ finito!")});
+      }
+      return seq;
+    }
+  },
+  {
+    id:"B3",label:"GIORNO B3",emoji:"🔥",color:"#FF9800",
+    title:"EMOM Variabile",
+    meta:"EMOM · ~24 min · 8 cicli",
+    totalMin:24,
+    how:"EMOM: ogni minuto parte un esercizio diverso. Fai le rep il prima possibile, poi riposi fino al minuto successivo. Più sei veloce, più riposi. Ciclo di 3 min ripetuto 8 volte.",
+    structure:[
+      ["Formato","EMOM 60\" (lavoro + rest nel minuto)"],
+      ["Ciclo","3 esercizi · 3 min"],
+      ["Ripetizioni ciclo","×8"],
+      ["Durata totale","~24 min"],
+    ],
+    exercises:[
+      {n:"A",name:"Swing Bimanuale",detail:"15 rep — poi riposa fino al minuto",t:"min 1",c:"#FF9800"},
+      {n:"B",name:"Push Press",detail:"6 sx + 6 dx — poi riposa",t:"min 2",c:"#FF9800"},
+      {n:"C",name:"Reverse Lunge + Pass",detail:"8 tot — KB passa da mano a mano",t:"min 3",c:"#FF9800"},
+      {n:"↺",name:"Ripeti A→B→C",detail:"Per 8 cicli completi",t:"×8",c:"#607080"},
+    ],
+    tips:[
+      "Reverse Lunge + Pass: passo indietro dx → KB dx → passa alla sx mentre torni su → passo sx. 1 lunge = 1 rep.",
+      "Se arrivi al minuto successivo ancora in lavoro, riduci le rep la prossima volta.",
+      "EMOM: round 6-7-8 si sentono molto più dei primi — è normale."
+    ],
+    buildSeq:function(){
+      const seq=[];
+      const cycle=[
+        {name:"Swing Bimanuale",timerSec:60,repsOverride:"15 rep — poi riposa",cueOverride:"Anca esplosiva, poi aspetta il prossimo minuto"},
+        {name:"Push Press",timerSec:60,repsOverride:"6 sx + 6 dx — poi riposa",cueOverride:"Dip & drive dal rack, lockout completo"},
+        {name:"Reverse Lunge + Pass",timerSec:60,repsOverride:"8 tot — KB passa mano a mano",cueOverride:"Passo indietro → passa KB → torna su"},
+      ];
+      for(let r=1;r<=8;r++){
+        cycle.forEach(ex=>{
+          seq.push({...ex,round:r,totalRounds:8,type:"emom"});
+        });
+      }
+      return seq;
+    }
+  },
+  {
+    id:"B4",label:"GIORNO B4",emoji:"💣",color:"#E91E63",
+    title:"Tabata",
+    meta:"Tabata · ~22 min · 5 blocchi da 4 min",
+    totalMin:22,
+    how:"Tabata classico: 20\" al massimo, 10\" fermo, 8 round per esercizio = 4 min. Poi 60\" di pausa e prossimo esercizio. È normale calare le rep — se non cali, vai troppo piano.",
+    structure:[
+      ["Formato","20\" lavoro / 10\" rest"],
+      ["Round per esercizio","8 (= 4 min)"],
+      ["Pausa tra esercizi","60\""],
+      ["Esercizi","5"],
+      ["Durata totale","~22 min"],
+    ],
+    exercises:[
+      {n:"1",name:"Swing Bimanuale",detail:"Max rep in 20\" · 8 round",t:"4 min",c:"#E91E63"},
+      {n:"2",name:"Goblet Squat",detail:"Max rep in 20\" · 8 round",t:"4 min",c:"#E91E63"},
+      {n:"3",name:"Push Press Alternato",detail:"Max rep in 20\" · 8 round",t:"4 min",c:"#E91E63"},
+      {n:"4",name:"One Arm Swing",detail:"Cambia mano ogni 10\" · 8 round",t:"4 min",c:"#E91E63"},
+      {n:"5",name:"Burpee + KB Deadlift",detail:"Burpee → deadlift · 8 round",t:"4 min",c:"#E91E63"},
+    ],
+    tips:[
+      "Tabata: ideato da Izumi Tabata nel 1996 per massimizzare VO2max in 4 minuti.",
+      "One Arm Swing: cambia mano quando senti cedere il braccio, non a metà tempo.",
+      "Burpee + Deadlift: burpee normale → in piedi → 1 deadlift KB. Conta come 1 rep."
+    ],
+    buildSeq:function(){
+      const seq=[];
+      const blocks=[
+        {name:"Swing Bimanuale",cue:"MAX REP — anca esplosiva"},
+        {name:"Goblet Squat",cue:"MAX REP — ginocchia fuori"},
+        {name:"Push Press Alternato",cue:"MAX REP — dip & drive"},
+        {name:"One Arm Swing",cue:"MAX REP — cambia mano quando cede"},
+        {name:"Burpee + KB Deadlift",cue:"MAX REP — burpee → deadlift"},
+      ];
+      blocks.forEach((bl,bi)=>{
+        for(let r=1;r<=8;r++){
+          seq.push({name:bl.name,round:r,totalRounds:8,timerSec:20,type:"work",
+            repsOverride:"MAX rep in 20\"",cueOverride:bl.cue+" · round "+r+"/8"});
+          seq.push({name:"Rest",round:r,totalRounds:8,timerSec:10,type:"rest",
+            repsOverride:"Fermati",cueOverride:"10 secondi"});
+        }
+        if(bi<blocks.length-1){
+          seq.push({name:"Pausa blocco",round:1,totalRounds:1,timerSec:60,type:"rest",
+            repsOverride:"60\" — prossimo: "+blocks[bi+1].name,cueOverride:"Respira — poi blocco "+(bi+2)+"/5"});
+        }
+      });
+      return seq;
+    }
+  },
+  {
+    id:"B5",label:"GIORNO B5",emoji:"🏗️",color:"#00BFA5",
+    title:"Piramidale",
+    meta:"Piramide · ~25 min · 5 round",
+    totalMin:25,
+    how:"Fai il blocco di 3 esercizi con rep crescenti: 5→10→15→10→5. Tra ogni round riposi 75\" fissi. Il round da 15 è il picco — da lì si scende.",
+    structure:[
+      ["Schema rep","5 → 10 → 15 → 10 → 5"],
+      ["Rest tra round","75\""],
+      ["Round totali","5"],
+      ["Durata totale","~25 min"],
+    ],
+    exercises:[
+      {n:"R1",name:"5 Swing + 5 Goblet + 5 Push Press",detail:"Volume basso — attivazione motoria",t:"×1",c:"#00BFA5"},
+      {n:"R2",name:"10 Swing + 10 Goblet + 10 Push Press",detail:"Volume medio — ritmo costante",t:"×1",c:"#00BFA5"},
+      {n:"R3",name:"15 Swing + 15 Goblet + 15 Push Press",detail:"🔥 PICCO — massima intensità",t:"×1",c:"#00BFA5"},
+      {n:"R4",name:"10 Swing + 10 Goblet + 10 Clean",detail:"Clean al posto del Push Press",t:"×1",c:"#00BFA5"},
+      {n:"R5",name:"5 Swing + 5 Goblet + 5 Clean",detail:"Discesa — controllo e respirazione",t:"×1",c:"#00BFA5"},
+    ],
+    tips:[
+      "Talk test tra i round: se fai frasi complete puoi ridurre il rest a 60\".",
+      "Round R3 da 15 rep: puoi dividere in 10+5 se necessario — tecnica prima di tutto.",
+      "R4-R5: il Clean è più tecnico del Push Press — rallenta e mantieni la KB vicina al corpo."
+    ],
+    buildSeq:function(){
+      const PYRAMID=[
+        {r:1,reps:5,label:"R1",ex2:"Push Press"},
+        {r:2,reps:10,label:"R2",ex2:"Push Press"},
+        {r:3,reps:15,label:"R3",ex2:"Push Press"},
+        {r:4,reps:10,label:"R4",ex2:"Clean"},
+        {r:5,reps:5,label:"R5",ex2:"Clean"},
+      ];
+      const seq=[];
+      PYRAMID.forEach((p,pi)=>{
+        seq.push({name:"KB Swing Bimanuale",round:p.r,totalRounds:5,timerSec:null,type:"ladder",
+          repsOverride:p.reps+" rep",cueOverride:"Anca esplosiva · "+p.label});
+        seq.push({name:"Goblet Squat",round:p.r,totalRounds:5,timerSec:null,type:"ladder",
+          repsOverride:p.reps+" rep",cueOverride:"Ginocchia fuori · pausa 1\" in basso"});
+        seq.push({name:p.ex2,round:p.r,totalRounds:5,timerSec:null,type:"ladder",
+          repsOverride:p.reps+" rep",cueOverride:p.ex2==="Clean"?"Rack pulito · zero oscillazione":"Dip & drive · lockout completo"});
+        if(pi<PYRAMID.length-1){
+          seq.push({name:"Recupero",round:p.r,totalRounds:5,timerSec:75,type:"rest",
+            repsOverride:"75\" rest",cueOverride:"Respira — prossimo round: "+(p.reps===15?"calano le rep":"aumentano le rep")});
+        }
+      });
+      return seq;
+    }
+  },
+
+  // ── B6: HIIT 30/15 ────────────────────────────────────────────────────────
+  {
+    id:"B6",label:"GIORNO B6",emoji:"🌪️",color:"#7C4DFF",
+    title:"HIIT 30/15 — Densità Alta",
+    meta:"HIIT 30/15 · ~21 min · 6 round",
+    totalMin:21,
+    how:"30\" di lavoro, 15\" di rest — ratio più alta rispetto al 40/20. Meno recupero, più densità. 5 esercizi per 6 round. Ideale quando vuoi massimizzare il lavoro in meno tempo.",
+    structure:[
+      ["Formato","30\" lavoro / 15\" rest"],
+      ["Round","6"],
+      ["Esercizi per round","5"],
+      ["Durata totale","~21 min"],
+    ],
+    exercises:[
+      {n:"1",name:"Swing Bimanuale",detail:"Max rep fluide in 30\"",t:"30\"",c:"#7C4DFF"},
+      {n:"2",name:"Push Press Alternato",detail:"Destra poi sinistra, ritmo costante",t:"30\"",c:"#7C4DFF"},
+      {n:"3",name:"Sumo Deadlift",detail:"Piedi larghi, KB tra i piedi, schiena neutra",t:"30\"",c:"#7C4DFF"},
+      {n:"4",name:"Renegade Row",detail:"Plank, row dx poi sx — core fisso",t:"30\"",c:"#7C4DFF"},
+      {n:"5",name:"Goblet Squat Jump",detail:"Squat profondo → salto esplosivo → atterra morbido",t:"30\"",c:"#7C4DFF"},
+      {n:"R",name:"Rest",detail:"15\" — respira, non sederti",t:"15\"",c:"#1565C0"},
+    ],
+    tips:[
+      "Sumo Deadlift: talloni fuori, punte a 45°, KB tra le gambe — spingi il pavimento, non tirare la schiena.",
+      "Renegade Row: plank alto stabile, KB sul pavimento — tira verso l'anca, non verso la spalla.",
+      "Goblet Squat Jump: KB tenuta al petto — squat profondo poi spingi il suolo con entrambi i piedi. Atterra con le ginocchia morbide."
+    ],
+    buildSeq:function(){
+      const exs=[
+        {name:"Swing Bimanuale",reps:"Max rep in 30\"",cue:"Anca esplosiva — schiena dritta"},
+        {name:"Push Press Alternato",reps:"Alt dx/sx in 30\"",cue:"Dip & drive — lockout completo"},
+        {name:"Sumo Deadlift",reps:"Rep controllate in 30\"",cue:"Piedi larghi — spingi il pavimento"},
+        {name:"Renegade Row",reps:"Alt dx/sx in 30\"",cue:"Plank rigido — tira verso l'anca"},
+        {name:"Goblet Squat Jump",reps:"Max rep in 30\"",cue:"Squat profondo → salto → atterra morbido"},
+      ];
+      const seq=[];
+      for(let r=1;r<=6;r++){
+        exs.forEach(e=>{
+          seq.push({name:e.name,round:r,totalRounds:6,timerSec:30,type:"work",
+            repsOverride:e.reps,cueOverride:e.cue+" · R"+r});
+          seq.push({name:"Rest",round:r,totalRounds:6,timerSec:15,type:"rest",
+            repsOverride:"15\" rest",cueOverride:"Respira"});
+        });
+      }
+      return seq;
+    }
+  },
+
+  // ── B7: EMOM 5 esercizi diversi ───────────────────────────────────────────
+  {
+    id:"B7",label:"GIORNO B7",emoji:"⏱️",color:"#00E5FF",
+    title:"EMOM 5 — Cinque Esercizi",
+    meta:"EMOM · ~25 min · 5 cicli × 5 min",
+    totalMin:25,
+    how:"5 esercizi diversi, ognuno con il suo minuto EMOM. Fai le rep assegnate il prima possibile, il resto del minuto è recupero. Ciclo da 5 min ripetuto 5 volte = 25 min. Ogni esercizio ha un pattern motorio diverso — forza, potenza, core, mobilità.",
+    structure:[
+      ["Formato","EMOM 60\" (lavoro + rest nel minuto)"],
+      ["Esercizi per ciclo","5"],
+      ["Cicli","5"],
+      ["Durata totale","~25 min"],
+    ],
+    exercises:[
+      {n:"A",name:"KB Snatch (sx+dx)",detail:"5 sx + 5 dx — poi riposa",t:"min 1",c:"#00E5FF"},
+      {n:"B",name:"Goblet Squat",detail:"12 rep — poi riposa",t:"min 2",c:"#00E5FF"},
+      {n:"C",name:"KB Halo",detail:"5 giri sx + 5 giri dx — lento",t:"min 3",c:"#00E5FF"},
+      {n:"D",name:"Push Press",detail:"8 sx + 8 dx — poi riposa",t:"min 4",c:"#00E5FF"},
+      {n:"E",name:"Swing Bimanuale",detail:"20 rep — poi riposa",t:"min 5",c:"#00E5FF"},
+      {n:"↺",name:"Ripeti A→E",detail:"Per 5 cicli completi",t:"×5",c:"#607080"},
+    ],
+    tips:[
+      "KB Snatch: traiettoria verticale, KB vicina al corpo — non deve girare attorno al polso ma scivolare sopra.",
+      "KB Halo: KB capovolta (cornetti in su), cerchio stretto intorno alla testa — spalle basse, core stabile.",
+      "EMOM: il recupero è inversamente proporzionale alla tua forma fisica — più migliori, più riposi."
+    ],
+    buildSeq:function(){
+      const cycle=[
+        {name:"KB Snatch",reps:"5 sx + 5 dx",cue:"Traiettoria verticale — KB vicina al corpo"},
+        {name:"Goblet Squat",reps:"12 rep",cue:"Ginocchia fuori — schiena verticale"},
+        {name:"KB Halo",reps:"5 giri sx + 5 giri dx",cue:"KB capovolta — spalle basse"},
+        {name:"Push Press",reps:"8 sx + 8 dx",cue:"Dip & drive — lockout duro"},
+        {name:"Swing Bimanuale",reps:"20 rep",cue:"Anca esplosiva — schiena neutra"},
+      ];
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        cycle.forEach(ex=>{
+          seq.push({name:ex.name,round:r,totalRounds:5,timerSec:60,type:"emom",
+            repsOverride:ex.reps,cueOverride:ex.cue});
+        });
+      }
+      return seq;
+    }
+  },
+
+  // ── B8: Complesso Viking ───────────────────────────────────────────────────
+  {
+    id:"B8",label:"GIORNO B8",emoji:"🪖",color:"#FF6D00",
+    title:"Complesso Viking",
+    meta:"Complesso KB · ~23 min · 5 round",
+    totalMin:23,
+    how:"Complesso ispirato allo schema Viking — Clean → Squat → Press tutto in uno senza posare la KB. Ogni tripletta è una rep. Fai il numero assegnato per lato poi cambia. 45\" di lavoro, 15\" di transizione, 60\" di recupero tra round.",
+    structure:[
+      ["Schema","Clean → Front Squat → Push Press = 1 rep"],
+      ["Formato","45\" lavoro / 15\" cambio lato / 60\" recupero"],
+      ["Round","5"],
+      ["Durata totale","~23 min"],
+    ],
+    exercises:[
+      {n:"1",name:"Clean → Front Squat → Push Press (sx)",detail:"Max rep · lato sinistro · 45\"",t:"45\"",c:"#FF6D00"},
+      {n:"→",name:"Cambio lato",detail:"Passa la KB alla mano destra",t:"15\"",c:"#607080"},
+      {n:"2",name:"Clean → Front Squat → Push Press (dx)",detail:"Max rep · lato destro · 45\"",t:"45\"",c:"#FF6D00"},
+      {n:"R",name:"Recupero",detail:"KB a terra — respira a fondo",t:"60\"",c:"#1565C0"},
+    ],
+    tips:[
+      "La tripletta: Clean in rack → Front Squat con KB in rack → Push Press dal rack → riabbassa in swing basso. Non posare mai tra i tre movimenti.",
+      "Conta le rep per lato e cerca di mantenerle uguali round dopo round — simmetria prima di velocità.",
+      "Questo è il workout più tecnico — round 1 fallo lento per calibrare il pattern, poi alza il ritmo."
+    ],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        seq.push({name:"Clean → Squat → Press (SX)",round:r,totalRounds:5,timerSec:45,type:"work",
+          repsOverride:"Max triplette · lato sx",cueOverride:"Clean → rack → squat → press → riabbassa"});
+        seq.push({name:"Cambio lato",round:r,totalRounds:5,timerSec:15,type:"rest",
+          repsOverride:"Passa KB alla mano dx",cueOverride:"Respira — poi parte il lato destro"});
+        seq.push({name:"Clean → Squat → Press (DX)",round:r,totalRounds:5,timerSec:45,type:"work",
+          repsOverride:"Max triplette · lato dx",cueOverride:"Clean → rack → squat → press → riabbassa"});
+        seq.push({name:"Recupero",round:r,totalRounds:5,timerSec:60,type:"rest",
+          repsOverride:"60\" rest",cueOverride:r<5?"Respira — round "+(r+1)+" in arrivo":"Ultimo round — finito!"});
+      }
+      return seq;
+    }
+  },
+
+  // ── B9: Tabata Doppio ─────────────────────────────────────────────────────
+  {
+    id:"B9",label:"GIORNO B9",emoji:"🔴",color:"#D50000",
+    title:"Tabata Doppio",
+    meta:"Tabata 20/10 · ~24 min · 6 blocchi",
+    totalMin:24,
+    how:"Tabata classico ma con 6 blocchi e una variante: ogni blocco alterna due esercizi invece di uno solo. 20\" esercizio A → 10\" rest → 20\" esercizio B → 10\" rest = 1 round. 8 round per blocco = 4 min. Più variato del Tabata singolo, stesso massacro.",
+    structure:[
+      ["Formato","20\" A / 10\" rest / 20\" B / 10\" rest"],
+      ["Round per blocco","8 (= 4 min)"],
+      ["Blocchi","6"],
+      ["Durata totale","~24 min"],
+    ],
+    exercises:[
+      {n:"I",name:"Swing + Push-up",detail:"Alternati ogni 20\" · 8 round",t:"4 min",c:"#D50000"},
+      {n:"II",name:"Goblet Squat + Plank Drag",detail:"Alternati ogni 20\" · 8 round",t:"4 min",c:"#D50000"},
+      {n:"III",name:"Clean + Row",detail:"Alternati ogni 20\" · 8 round",t:"4 min",c:"#D50000"},
+      {n:"IV",name:"Push Press + Burpee",detail:"Alternati ogni 20\" · 8 round",t:"4 min",c:"#D50000"},
+      {n:"V",name:"One Arm Swing + Mountain Climber",detail:"Alternati ogni 20\" · 8 round",t:"4 min",c:"#D50000"},
+      {n:"VI",name:"Swing Bimanuale + Squat Jump",detail:"Finale esplosivo · 8 round",t:"4 min",c:"#D50000"},
+    ],
+    tips:[
+      "Tabata doppio: il vantaggio è che alternare due esercizi permette recupero parziale dei muscoli — puoi mantenere qualità più alta per più round.",
+      "Mountain Climber: in plank alto, ginocchia alternate verso il petto il più veloce possibile — non alzare i fianchi.",
+      "Blocco VI finale: è il più duro perché arrivi stanco — gestisci il ritmo nei round 1-4 per avere qualcosa nei round 5-8."
+    ],
+    buildSeq:function(){
+      const blocks=[
+        [{name:"Swing Bimanuale",cue:"Anca esplosiva"},{name:"Push-up",cue:"Core rigido — corpo in linea"}],
+        [{name:"Goblet Squat",cue:"Ginocchia fuori — pausa 1\""},{name:"Plank KB Drag",cue:"Core fisso — niente rotazione fianchi"}],
+        [{name:"KB Clean",cue:"Rack pulito — gomito a corpo"},{name:"KB Row",cue:"Gomito alto — tira verso l'anca"}],
+        [{name:"Push Press",cue:"Dip & drive — lockout duro"},{name:"Burpee",cue:"Max ritmo — atterra morbido"}],
+        [{name:"One Arm Swing",cue:"Stesso pattern del bimanuale"},{name:"Mountain Climber",cue:"Ginocchia veloci — fianchi giù"}],
+        [{name:"Swing Bimanuale",cue:"FINALE — anca esplosiva"},{name:"Squat Jump",cue:"FINALE — spingi il suolo"}],
+      ];
+      const seq=[];
+      blocks.forEach((pair,bi)=>{
+        for(let r=1;r<=8;r++){
+          const exA=pair[0], exB=pair[1];
+          seq.push({name:exA.name,round:r,totalRounds:8,timerSec:20,type:"work",
+            repsOverride:"MAX rep · blocco "+(bi+1)+"/6",cueOverride:exA.cue});
+          seq.push({name:"Rest",round:r,totalRounds:8,timerSec:10,type:"rest",
+            repsOverride:"10\"",cueOverride:"→ "+exB.name});
+          seq.push({name:exB.name,round:r,totalRounds:8,timerSec:20,type:"work",
+            repsOverride:"MAX rep · round "+r+"/8",cueOverride:exB.cue});
+          seq.push({name:"Rest",round:r,totalRounds:8,timerSec:10,type:"rest",
+            repsOverride:"10\"",cueOverride:r<8?"→ "+exA.name+" · round "+(r+1):"→ pausa blocco"});
+        }
+        if(bi<blocks.length-1){
+          seq.push({name:"Pausa tra blocchi",round:1,totalRounds:1,timerSec:60,type:"rest",
+            repsOverride:"60\" — prossimo: "+blocks[bi+1][0].name+" + "+blocks[bi+1][1].name,
+            cueOverride:"Respira — blocco "+(bi+2)+"/6 in arrivo"});
+        }
+      });
+      return seq;
+    }
+  }
+];
+
+function getExtraById(id){return EXTRA_WORKOUTS.find(w=>w.id===id);}
+
+function renderExtra(){
+  const cards=EXTRA_WORKOUTS.map(w=>`
+    <button onclick="openExtraDetail('${w.id}')"
+      style="display:block;width:100%;margin:0 0 14px;background:#0F1419;border:1.5px solid #1E2A35;border-radius:20px;overflow:hidden;text-align:left;color:#F0F4F8;padding:0;">
+      <div style="padding:18px 20px 16px;display:flex;align-items:center;gap:14px;">
+        <div style="font-size:42px;flex-shrink:0;">${w.emoji}</div>
+        <div style="flex:1;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${w.color};line-height:1;margin-bottom:3px;">${w.label} — ${w.title}</div>
+          <div style="font-size:12px;color:#607080;margin-bottom:8px;">${w.meta}</div>
+          <div style="font-size:13px;color:#8090A0;line-height:1.5;">${w.how}</div>
+        </div>
+        <div style="font-size:22px;color:#607080;flex-shrink:0;">›</div>
+      </div>
+      <div style="display:flex;gap:6px;padding:0 20px 16px;flex-wrap:wrap;">
+        ${w.exercises.filter(e=>e.n!=="R"&&e.n!=="↺").slice(0,4).map(e=>`
+          <div style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px solid ${w.color}44;color:${w.color};">${e.name}</div>`).join("")}
+      </div>
+    </button>`).join("");
+
+  return `<div class="screen" style="overflow-y:auto;">
+    <div style="padding:36px 22px 16px;text-align:center;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:5px;color:#FF5722;margin-bottom:6px;">WORKOUT</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;">EXTRA HIIT</div>
+      <div style="font-size:13px;color:#607080;margin-top:8px;line-height:1.5;">4 varianti · KB 10 kg · 20–25 min<br>Tocca una card per aprire e avviare</div>
+    </div>
+    <div style="padding:0 16px 20px;">
+      ${cards}
+    </div>
+    ${navHTML("extra")}
+  </div>`;
+}
+
+function openExtraDetail(id){
+  state.extraDetailId=id;
+  state.tab="extra-detail";
+  render();
+}
+
+function renderExtraDetail(){
+  const w=getExtraById(state.extraDetailId);
+  if(!w)return renderExtra();
+  return `<div class="screen" style="overflow-y:auto;">
+    <!-- Topbar -->
+    <div class="topbar">
+      <button class="back-btn" onclick="switchTab('extra')">‹</button>
+      <div class="topbar-center">
+        <div class="topbar-title">${w.label} — ${w.title}</div>
+        <div class="topbar-step">${w.meta}</div>
+      </div>
+    </div>
+    <!-- Hero -->
+    <div style="text-align:center;padding:10px 22px 18px;">
+      <div style="font-size:64px;margin-bottom:8px;">${w.emoji}</div>
+      <div style="font-size:13px;color:#8090A0;line-height:1.6;">${w.how}</div>
+    </div>
+    <!-- Struttura -->
+    <div style="margin:0 18px 16px;padding:14px 16px;background:#0F1419;border-radius:14px;border:1px solid #1E2A35;">
+      <div style="font-size:10px;letter-spacing:3px;color:#607080;margin-bottom:10px;">STRUTTURA</div>
+      ${w.structure.map(([k,v])=>`
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:13px;color:#607080;">${k}</span>
+          <span style="font-size:13px;font-weight:700;">${v}</span>
+        </div>`).join("")}
+    </div>
+    <!-- Esercizi -->
+    <div style="padding:0 18px 16px;">
+      <div style="font-size:10px;letter-spacing:3px;color:#607080;margin-bottom:10px;">SEQUENZA</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${w.exercises.map(e=>`
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:#0F1419;border-radius:12px;border:1px solid #1E2A35;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${e.c};width:28px;flex-shrink:0;">${e.n}</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:700;">${e.name}</div>
+              <div style="font-size:12px;color:#607080;margin-top:2px;">${e.detail}</div>
+            </div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${e.c};flex-shrink:0;">${e.t}</div>
+          </div>`).join("")}
+      </div>
+    </div>
+    <!-- Tips -->
+    <div style="margin:0 18px 22px;padding:14px 16px;background:#0F1419;border-radius:14px;border-left:3px solid ${w.color};">
+      <div style="font-size:10px;letter-spacing:3px;color:#607080;margin-bottom:10px;">COME ESEGUIRE</div>
+      ${w.tips.map(t=>`<div style="font-size:13px;color:#8090A0;line-height:1.6;margin-bottom:6px;">• ${t}</div>`).join("")}
+    </div>
+    <!-- START -->
+    <div style="padding:0 18px 32px;">
+      <button onclick="startExtraWorkout('${w.id}')"
+        style="width:100%;padding:20px;border-radius:18px;background:${w.color};color:#000;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;border:none;display:flex;align-items:center;justify-content:center;gap:10px;">
+        ▶ START ${w.label}
+      </button>
+    </div>
+  </div>`;
+}
+
+function startExtraWorkout(id){
+  unlockAudio();
+  clearTimerInterval();
+  requestWakeLock();
+  const w=getExtraById(id);
+  if(!w)return;
+  const seq=w.buildSeq();
+  const step=seq[0];
+  state={...state,
+    tab:"workout",
+    dayKey:"extra_"+id,
+    extraWorkoutId:id,
+    stepIdx:0,
+    remaining:step.timerSec??0,
+    timerRunning:true,
+    startTime:Date.now(),
+    logForm:{feeling:null,hrAvg:"",hrMax:"",weight:"10",talkTest:null,notes:""}
+  };
+  // Inietta la sequenza temporaneamente in DAYS
+  DAYS["extra_"+id]={
+    label:w.label,subtitle:w.title,focus:w.meta,
+    color:w.color,emoji:w.emoji,seq,totalMin:w.totalMin
+  };
+  render();
+  if(step.timerSec)startTimerInterval();
+}
+
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function render(){
   const app=document.getElementById("app");
@@ -1729,6 +2275,8 @@ function render(){
   else if(state.tab==="axe-workout")app.innerHTML=renderAxeWorkout();
   else if(state.tab==="axe-done")   app.innerHTML=renderAxeDone();
   else if(state.tab==="programs")   app.innerHTML=renderPrograms();
+  else if(state.tab==="extra")      app.innerHTML=renderExtra();
+  else if(state.tab==="extra-detail")app.innerHTML=renderExtraDetail();
   else                               app.innerHTML=renderHome();
 }
 
@@ -1763,8 +2311,13 @@ function startWorkout(key){
   if(step.timerSec)startTimerInterval();
 }
 
-function exitWorkout(){clearTimerInterval();releaseWakeLock();state.tab="home";state.timerRunning=false;render();}
-function goHome(){clearTimerInterval();releaseWakeLock();state.tab="home";state.timerRunning=false;render();}
+function exitWorkout(){
+  clearTimerInterval();releaseWakeLock();
+  if(state.extraWorkoutId){state.tab="extra-detail";}
+  else{state.tab="home";}
+  state.timerRunning=false;render();
+}
+function goHome(){clearTimerInterval();releaseWakeLock();state.extraWorkoutId=null;state.tab="home";state.timerRunning=false;render();}
 
 function nextStep(){
   clearTimerInterval();
@@ -1838,6 +2391,7 @@ function setLogField(field,val){
 
 function saveSession(){
   const f=state.logForm;
+  const isExtra=state.dayKey&&state.dayKey.startsWith("extra_");
   const entry={
     day:state.dayKey,
     date:new Date().toLocaleDateString("it-IT"),
@@ -1855,12 +2409,14 @@ function saveSession(){
   state.history.push(entry);
   saveHistory();
   state.partial=false;
+  state.extraWorkoutId=null;
   state.tab="home";
   state.timerRunning=false;
   render();
 }
 
 function skipSave(){
+  state.extraWorkoutId=null;
   state.tab="home";state.timerRunning=false;render();
 }
 
