@@ -408,6 +408,8 @@ const EXERCISES={
   "KB Snatch":             {reps:"5 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+snatch+tutorial+technique",cue:"Traiettoria verticale — KB vicina al corpo"},
   "KB Halo":               {reps:"5 giri/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+halo+exercise+tutorial",cue:"KB capovolta — cerchio stretto, spalle basse"},
   "KB Clean":              {reps:"8 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+clean+technique+tutorial",cue:"Rack pulito — gomito a corpo, zero oscillazione"},
+  "KB Deadlift":           {reps:"8–10 rip",yt:"https://www.youtube.com/results?search_query=kettlebell+deadlift+tutorial+form",cue:"Hinges sull'anca — schiena neutra, spingi il pavimento"},
+  "KB Press":              {reps:"6–8 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+strict+press+tutorial",cue:"Strict press — no dip, spingi con la spalla"},
   "Push Press Alternato":  {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=kettlebell+push+press+alternating+tutorial",cue:"Dip & drive — lockout duro, alterna lati"},
   "Burpee":                {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=burpee+perfect+form+tutorial",cue:"Plank → push-up → salto — ritmo costante"},
   "Burpee + KB Deadlift":  {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=burpee+kettlebell+deadlift+combo",cue:"Burpee → in piedi → 1 deadlift KB = 1 rep"},
@@ -669,6 +671,110 @@ function navHTML(active){
 }
 function switchTab(t){state.tab=t;render();}
 
+// ── SMART SUGGESTION ─────────────────────────────────────────────────────────
+function getSmartSuggestion(){
+  const hist=state.history; // sessioni KB + EXTRA
+  const axeHist=state.axeHistory;
+  const last5=[...hist].slice(-5);
+  const last3=[...hist].slice(-3);
+  const lastSession=hist.length>0?hist[hist.length-1]:null;
+  const lastAxe=axeHist.length>0?axeHist[axeHist.length-1]:null;
+
+  // ── 1. RECUPERO: se ultima sessione era pesante o HR alta ─────────────────
+  if(lastSession){
+    const hrAvg=lastSession.hrAvg;
+    const feeling=lastSession.feeling;
+    const isHeavy=feeling==="😫";
+    const isHighHR=hrAvg&&hrAvg>165;
+    if(isHeavy||isHighHR){
+      return {
+        type:"rest",
+        icon:"🌀",
+        color:"#00BFA5",
+        title:"Giorno di recupero",
+        reason: isHeavy
+          ? `L'ultimo allenamento (${lastSession.day}) era pesante — il tuo corpo chiede recupero.`
+          : `HR media alta nell'ultima sessione (${hrAvg} bpm) — lascia che il sistema si adatti.`,
+        action:null,
+        actionLabel:null,
+        tip:"Fai 10–15 min di mobilità leggera oppure una camminata. Niente KB oggi."
+      };
+    }
+  }
+
+  // ── 2. EQUILIBRIO A/B/C: non ripetere lo stesso due volte di fila ─────────
+  const lastDay=lastSession?lastSession.day:null;
+  const lastLastDay=hist.length>1?hist[hist.length-2].day:null;
+
+  // Conta quante volte A/B/C nelle ultime 6 sessioni
+  const abcCount={A:0,B:0,C:0};
+  [...hist].slice(-6).forEach(h=>{
+    if(h.day==="A"||h.day==="B"||h.day==="C") abcCount[h.day]++;
+  });
+
+  // Trova il giorno A/B/C meno fatto di recente
+  const abcOrder=["A","B","C"].filter(d=>d!==lastDay).sort((a,b)=>abcCount[a]-abcCount[b]);
+  const suggestedABC=abcOrder[0]||"A";
+  const suggestedDay=DAYS[suggestedABC];
+
+  // ── 3. VARIETÀ EXTRA: se non ne hai fatto uno nelle ultime 4 sessioni ─────
+  const recentExtra=last5.filter(h=>h.day&&h.day.startsWith("extra_"));
+  const noRecentExtra=recentExtra.length===0&&hist.length>=3;
+
+  // ── 4. PROGRESSIONE: se ultime 2 sessioni erano 💪 o 🔥 suggerisci +volume
+  const lastTwo=last3.slice(-2);
+  const allEasy=lastTwo.length>=2&&lastTwo.every(h=>h.feeling==="💪"||h.feeling==="🔥");
+
+  // ── Costruisci il messaggio finale ─────────────────────────────────────────
+
+  // Priorità EXTRA se non ne ha fatto uno di recente e non è in recupero
+  if(noRecentExtra){
+    // Suggerisci un EXTRA che non ha mai fatto o non ha fatto di recente
+    const recentExtraIds=last5.filter(h=>h.day&&h.day.startsWith("extra_")).map(h=>h.day.replace("extra_",""));
+    const candidate=EXTRA_WORKOUTS.find(w=>!recentExtraIds.includes(w.id))||EXTRA_WORKOUTS[0];
+    return {
+      type:"extra",
+      icon:candidate.emoji,
+      color:candidate.color,
+      title:candidate.label+" — "+candidate.title,
+      reason:"Non fai un workout EXTRA da un po' — è il momento di variare.",
+      action:"openExtraDetail('"+candidate.id+"')",
+      actionLabel:"▶ Apri "+candidate.label,
+      tip:candidate.meta
+    };
+  }
+
+  // Progressione volume
+  if(allEasy&&lastDay){
+    const nextDay=suggestedABC;
+    const nday=DAYS[nextDay];
+    return {
+      type:"abc",
+      icon:nday.emoji,
+      color:nday.color,
+      title:nday.label+" — "+nday.subtitle,
+      reason:"Ultime 2 sessioni andate bene 💪 — sei pronto per alzare il ritmo. Vai al massimo oggi.",
+      action:"startWorkout('"+nextDay+"')",
+      actionLabel:"▶ Start "+nday.label+" (max effort)",
+      tip:"Obiettivo: mantieni la tecnica anche negli ultimi round."
+    };
+  }
+
+  // Equilibrio A/B/C standard
+  return {
+    type:"abc",
+    icon:suggestedDay.emoji,
+    color:suggestedDay.color,
+    title:suggestedDay.label+" — "+suggestedDay.subtitle,
+    reason: lastDay
+      ? `Ultimo allenamento: Giorno ${lastDay}. Tocca a ${suggestedABC} per mantenere l'equilibrio.`
+      : "Inizia con il Giorno A — il punto di partenza del programma.",
+    action:"startWorkout('"+suggestedABC+"')",
+    actionLabel:"▶ Start "+suggestedDay.label,
+    tip:suggestedDay.focus+" · ~"+suggestedDay.totalMin+" min"
+  };
+}
+
 // ── RENDER HOME ───────────────────────────────────────────────────────────────
 function renderHome(){
   const suggested=getTodaySuggested();
@@ -714,6 +820,25 @@ function renderHome(){
     </div>`;
   }
 
+  // ── SMART SUGGESTION BANNER ───────────────────────────────────────────────
+  const sug=getSmartSuggestion();
+  const sugBanner=`
+    <div style="margin:0 18px 4px;padding:16px;background:#0F1419;border:1.5px solid ${sug.color}44;border-radius:18px;border-left:4px solid ${sug.color};">
+      <div style="font-size:10px;letter-spacing:3px;color:#607080;margin-bottom:8px;">💡 ALLENAMENTO SUGGERITO</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <span style="font-size:28px;">${sug.icon}</span>
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${sug.color};line-height:1.1;">${sug.title}</div>
+          <div style="font-size:11px;color:#607080;margin-top:2px;">${sug.tip}</div>
+        </div>
+      </div>
+      <div style="font-size:13px;color:#8090A0;line-height:1.5;margin-bottom:${sug.action?'12px':'0'};">${sug.reason}</div>
+      ${sug.action?`<button onclick="${sug.action}"
+        style="width:100%;padding:12px;border-radius:12px;background:${sug.color};color:#000;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;border:none;">
+        ${sug.actionLabel}
+      </button>`:''}
+    </div>`;
+
   let recentHTML="";
   // Unisci storico normale e AXE, ordina per data più recente (index come proxy)
   const allRecent=[
@@ -746,6 +871,7 @@ function renderHome(){
       </div>
       ${apBanner}
       <div class="day-cards">${cards}</div>
+      ${sugBanner}
       ${recentHTML}
     </div>
     ${navHTML("home")}
@@ -2139,35 +2265,390 @@ const EXTRA_WORKOUTS=[
       });
       return seq;
     }
+  },
+
+  // ── C2: EMOM Lower Body ───────────────────────────────────────────────────
+  {
+    id:"C2",label:"GIORNO C2",emoji:"🦵",color:"#FF6F00",
+    title:"EMOM Lower Body",
+    meta:"EMOM 60\" · ~24 min · 4 esercizi × 6 round",
+    totalMin:24,
+    how:"EMOM focalizzato sui pattern inferiori. 4 esercizi in rotazione ogni minuto — Deadlift, Squat, Lunge, Swing. Fai le rep, poi riposi fino al minuto successivo. 6 cicli completi.",
+    structure:[
+      ["Formato","EMOM 60\" per esercizio"],
+      ["Esercizi","4 in rotazione"],
+      ["Cicli","6"],
+      ["Durata totale","~24 min"],
+    ],
+    exercises:[
+      {n:"A",name:"KB Deadlift",detail:"8 rep · schiena neutra, spingi il pavimento",t:"min 1",c:"#FF6F00"},
+      {n:"B",name:"Goblet Squat",detail:"10 rep · pausa 1\" in basso",t:"min 2",c:"#FF6F00"},
+      {n:"C",name:"Reverse Lunge",detail:"6 sx + 6 dx · ginocchio non tocca",t:"min 3",c:"#FF6F00"},
+      {n:"D",name:"Swing Bimanuale",detail:"15 rep · anca esplosiva",t:"min 4",c:"#FF6F00"},
+      {n:"↺",name:"Ripeti A→D",detail:"Per 6 cicli",t:"×6",c:"#607080"},
+    ],
+    tips:[
+      "KB Deadlift: piedi larghezza fianchi, KB tra i piedi — hinges sull'anca, non fletti la schiena.",
+      "EMOM lower body: le gambe si affaticano più lentamente ma recuperano più lentamente — al ciclo 4-5-6 sentirai la differenza.",
+      "Se finisci le rep in anticipo, rimani in piedi e respira — non sederti mai durante un EMOM."
+    ],
+    buildSeq:function(){
+      const cycle=[
+        {name:"KB Deadlift",reps:"8 rep",cue:"Hinges sull'anca — schiena neutra"},
+        {name:"Goblet Squat",reps:"10 rep · pausa 1\" in basso",cue:"Ginocchia fuori — talloni a terra"},
+        {name:"Reverse Lunge",reps:"6 sx + 6 dx",cue:"Busto eretto — ginocchio posteriore vicino al suolo"},
+        {name:"Swing Bimanuale",reps:"15 rep",cue:"Anca esplosiva — KB fino all'altezza del petto"},
+      ];
+      const seq=[];
+      for(let r=1;r<=6;r++){
+        cycle.forEach(ex=>{
+          seq.push({name:ex.name,round:r,totalRounds:6,timerSec:60,type:"emom",
+            repsOverride:ex.reps,cueOverride:ex.cue});
+        });
+      }
+      return seq;
+    }
+  },
+
+  // ── C3: Circuito Push/Pull ────────────────────────────────────────────────
+  {
+    id:"C3",label:"GIORNO C3",emoji:"↕️",color:"#00897B",
+    title:"Circuito Push / Pull",
+    meta:"HIIT 40/20 · ~22 min · 5 round",
+    totalMin:22,
+    how:"Circuito alternato push/pull — ogni esercizio di spinta è seguito da uno di trazione. Questo riduce l'affaticamento locale e permette di mantenere alta la qualità tecnica per tutti i round. 40\" lavoro, 20\" rest, 4 esercizi, 5 round.",
+    structure:[
+      ["Formato","40\" lavoro / 20\" rest"],
+      ["Schema","Push → Pull → Push → Pull"],
+      ["Round","5"],
+      ["Durata totale","~22 min"],
+    ],
+    exercises:[
+      {n:"1",name:"Push Press",detail:"PUSH · 8 sx + 8 dx · dip & drive",t:"40\"",c:"#00897B"},
+      {n:"2",name:"KB Row",detail:"PULL · 10 sx + 10 dx · gomito alto",t:"40\"",c:"#00897B"},
+      {n:"3",name:"Push-up",detail:"PUSH · max rep · core rigido",t:"40\"",c:"#00897B"},
+      {n:"4",name:"One Arm Swing",detail:"PULL · 10 sx + 10 dx · anca esplosiva",t:"40\"",c:"#00897B"},
+      {n:"R",name:"Rest",detail:"20\" tra ogni esercizio",t:"20\"",c:"#1565C0"},
+    ],
+    tips:[
+      "Push/Pull: la logica è che quando spingi (petto, tricipiti, spalle) i muscoli di trazione (dorsali, bicipiti) recuperano e viceversa.",
+      "Push-up: se arrivi al round 4-5 con meno di 5 rep, passa alle variante con ginocchia a terra — qualità > quantità.",
+      "One Arm Swing come pull: concentrati sul lato posteriore della spalla e sul dorsale che 'frena' la KB nella discesa."
+    ],
+    buildSeq:function(){
+      const exs=[
+        {name:"Push Press",reps:"8 sx + 8 dx",cue:"PUSH — dip & drive dal rack, lockout completo"},
+        {name:"KB Row",reps:"10 sx + 10 dx",cue:"PULL — staggered stance, tira verso l'anca"},
+        {name:"Push-up",reps:"Max rep",cue:"PUSH — core rigido, corpo in linea"},
+        {name:"One Arm Swing",reps:"10 sx + 10 dx",cue:"PULL — anca esplosiva, spalla packed"},
+      ];
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        exs.forEach(ex=>{
+          seq.push({name:ex.name,round:r,totalRounds:5,timerSec:40,type:"work",
+            repsOverride:ex.reps,cueOverride:ex.cue});
+          seq.push({name:"Rest",round:r,totalRounds:5,timerSec:20,type:"rest",
+            repsOverride:"20\" rest",cueOverride:"Respira"});
+        });
+      }
+      return seq;
+    }
+  },
+
+  // ── C4: Circuito Upper Body ───────────────────────────────────────────────
+  {
+    id:"C4",label:"GIORNO C4",emoji:"💪",color:"#8E24AA",
+    title:"Circuito Upper Body",
+    meta:"HIIT 35/25 · ~21 min · 5 round",
+    totalMin:21,
+    how:"Focus sul treno superiore — spalle, dorsali, core. Formato 35/25 con più recupero rispetto al classico 40/20, perché gli esercizi di spinta richiedono qualità tecnica alta. 5 esercizi, 5 round.",
+    structure:[
+      ["Formato","35\" lavoro / 25\" rest"],
+      ["Esercizi","5"],
+      ["Round","5"],
+      ["Durata totale","~21 min"],
+    ],
+    exercises:[
+      {n:"1",name:"KB Press",detail:"6 sx + 6 dx · strict press, no dip",t:"35\"",c:"#8E24AA"},
+      {n:"2",name:"Renegade Row",detail:"6 sx + 6 dx · plank rigido",t:"35\"",c:"#8E24AA"},
+      {n:"3",name:"KB Halo",detail:"5 giri sx + 5 dx · spalle basse",t:"35\"",c:"#8E24AA"},
+      {n:"4",name:"Push-up",detail:"Max rep · corpo in linea",t:"35\"",c:"#8E24AA"},
+      {n:"5",name:"Plank KB Drag",detail:"10 drag · core fisso",t:"35\"",c:"#8E24AA"},
+      {n:"R",name:"Rest",detail:"25\" tra ogni esercizio",t:"25\"",c:"#1565C0"},
+    ],
+    tips:[
+      "KB Press strict: nessun dip delle gambe — spingi con puro lavoro di spalla. Se non ce la fai, riduci le rep invece di usare le gambe.",
+      "Renegade Row: più lento è meglio — ogni rep deve essere controllata. Plank alto, KB sul pavimento, tira verso l'anca.",
+      "Questo circuito non ha esercizi per le gambe — puoi combinarlo con C2 (Lower Body) nella stessa settimana per una divisione upper/lower."
+    ],
+    buildSeq:function(){
+      const exs=[
+        {name:"KB Press",reps:"6 sx + 6 dx",cue:"Strict press — no dip, spingi con la spalla"},
+        {name:"Renegade Row",reps:"6 sx + 6 dx",cue:"Plank alto rigido — tira verso l'anca"},
+        {name:"KB Halo",reps:"5 giri sx + 5 dx",cue:"KB capovolta — cerchio stretto, spalle basse"},
+        {name:"Push-up",reps:"Max rep",cue:"Core rigido — petto che sfiora il suolo"},
+        {name:"Plank KB Drag",reps:"10 drag dx→sx",cue:"Fianchi fermi — respira durante il drag"},
+      ];
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        exs.forEach(ex=>{
+          seq.push({name:ex.name,round:r,totalRounds:5,timerSec:35,type:"work",
+            repsOverride:ex.reps,cueOverride:ex.cue});
+          seq.push({name:"Rest",round:r,totalRounds:5,timerSec:25,type:"rest",
+            repsOverride:"25\" rest",cueOverride:"Respira"});
+        });
+      }
+      return seq;
+    }
+  },
+
+  // ── C5: Circuito Full Body 30/15 ──────────────────────────────────────────
+  {
+    id:"C5",label:"GIORNO C5",emoji:"🌀",color:"#F4511E",
+    title:"Circuito Full Body Express",
+    meta:"HIIT 30/15 · ~18 min · 6 round",
+    totalMin:18,
+    how:"Circuito full body compresso — 6 esercizi che coprono tutti i pattern motori in soli 18 minuti. Formato 30/15, ritmo alto. Ideale quando hai poco tempo ma vuoi lavorare tutto il corpo.",
+    structure:[
+      ["Formato","30\" lavoro / 15\" rest"],
+      ["Esercizi","6"],
+      ["Round","6 (×1 per esercizio a rotazione)"],
+      ["Durata totale","~18 min"],
+    ],
+    exercises:[
+      {n:"1",name:"Swing Bimanuale",detail:"Max rep · anca esplosiva",t:"30\"",c:"#F4511E"},
+      {n:"2",name:"Goblet Squat",detail:"Max rep · pausa in basso",t:"30\"",c:"#F4511E"},
+      {n:"3",name:"Push Press Alternato",detail:"Max rep · dip & drive",t:"30\"",c:"#F4511E"},
+      {n:"4",name:"KB Row",detail:"Max rep · alt sx/dx",t:"30\"",c:"#F4511E"},
+      {n:"5",name:"Mountain Climber",detail:"Max rep · fianchi giù",t:"30\"",c:"#F4511E"},
+      {n:"6",name:"KB Deadlift",detail:"Max rep · schiena neutra",t:"30\"",c:"#F4511E"},
+      {n:"R",name:"Rest",detail:"15\" tra ogni esercizio",t:"15\"",c:"#1565C0"},
+    ],
+    tips:[
+      "Circuito a rotazione: fai tutti e 6 gli esercizi in sequenza = 1 ciclo. Poi ricomincia dall'inizio per 6 cicli totali.",
+      "30/15 è il formato più intenso della libreria — il recupero è minimo. Priorità alla forma tecnica, poi alla velocità.",
+      "Mountain Climber senza KB: usa il pavimento. La KB è a terra vicino a te per il Deadlift successivo."
+    ],
+    buildSeq:function(){
+      const exs=[
+        {name:"Swing Bimanuale",reps:"Max rep",cue:"Anca esplosiva — schiena neutra"},
+        {name:"Goblet Squat",reps:"Max rep",cue:"Ginocchia fuori — pausa 1\" in basso"},
+        {name:"Push Press Alternato",reps:"Max rep alt",cue:"Dip & drive — lockout completo"},
+        {name:"KB Row",reps:"Max rep alt sx/dx",cue:"Staggered stance — tira verso l'anca"},
+        {name:"Mountain Climber",reps:"Max rep",cue:"Plank alto — ginocchia veloci, fianchi giù"},
+        {name:"KB Deadlift",reps:"Max rep",cue:"Hinges sull'anca — spingi il pavimento"},
+      ];
+      const seq=[];
+      for(let r=1;r<=6;r++){
+        exs.forEach(ex=>{
+          seq.push({name:ex.name,round:r,totalRounds:6,timerSec:30,type:"work",
+            repsOverride:ex.reps,cueOverride:ex.cue+" · ciclo "+r+"/6"});
+          seq.push({name:"Rest",round:r,totalRounds:6,timerSec:15,type:"rest",
+            repsOverride:"15\" rest",cueOverride:"Respira"});
+        });
+      }
+      return seq;
+    }
+  },
+
+  // ── C6: Circuito Metabolico 45/15 ─────────────────────────────────────────
+  {
+    id:"C6",label:"GIORNO C6",emoji:"⚗️",color:"#039BE5",
+    title:"Circuito Metabolico 45/15",
+    meta:"HIIT 45/15 · ~20 min · 4 round",
+    totalMin:20,
+    how:"45 secondi di lavoro, 15 di rest — ratio elevata pensata per massimizzare il consumo calorico. 5 esercizi composti che coinvolgono grandi gruppi muscolari. 4 round con 60\" di recupero tra i round.",
+    structure:[
+      ["Formato","45\" lavoro / 15\" rest"],
+      ["Esercizi","5"],
+      ["Round","4"],
+      ["Recupero tra round","60\""],
+      ["Durata totale","~20 min"],
+    ],
+    exercises:[
+      {n:"1",name:"KB Swing Bimanuale",detail:"Anca esplosiva · max rep",t:"45\"",c:"#039BE5"},
+      {n:"2",name:"Goblet Squat Jump",detail:"Squat profondo → salto → atterra morbido",t:"45\"",c:"#039BE5"},
+      {n:"3",name:"Clean + Press",detail:"5 sx + 5 dx · flusso continuo",t:"45\"",c:"#039BE5"},
+      {n:"4",name:"Burpee",detail:"Max rep · ritmo costante",t:"45\"",c:"#039BE5"},
+      {n:"5",name:"One Arm Swing",detail:"Cambia mano ogni 10\" · continuo",t:"45\"",c:"#039BE5"},
+      {n:"R",name:"Recupero attivo",detail:"60\" tra round · cammina e respira",t:"60\"",c:"#1565C0"},
+    ],
+    tips:[
+      "45/15 con grandi esercizi: il Goblet Squat Jump e il Burpee sono i due esercizi che alzano di più la FC — mettili in mezzo al circuito, non alla fine.",
+      "Gestisci il ritmo: 45 secondi è lungo. Parti a ritmo medio-alto e mantienilo — non partire a bomba per crollare a 30\".",
+      "Round 4: se sei arrivato fin qui con buona tecnica, puoi aumentare l'intensità sul Swing finale."
+    ],
+    buildSeq:function(){
+      const exs=[
+        {name:"KB Swing Bimanuale",reps:"Max rep in 45\"",cue:"Anca esplosiva — schiena neutra"},
+        {name:"Goblet Squat Jump",reps:"Max rep in 45\"",cue:"Squat profondo → spingi → atterra morbido"},
+        {name:"Clean + Press",reps:"5 sx + 5 dx continuo",cue:"Clean pulito in rack — press verticale"},
+        {name:"Burpee",reps:"Max rep in 45\"",cue:"Ritmo costante — atterra con ginocchia morbide"},
+        {name:"One Arm Swing",reps:"Cambia mano ogni 10\"",cue:"Stesso pattern del bimanuale — spalla packed"},
+      ];
+      const seq=[];
+      for(let r=1;r<=4;r++){
+        exs.forEach(ex=>{
+          seq.push({name:ex.name,round:r,totalRounds:4,timerSec:45,type:"work",
+            repsOverride:ex.reps,cueOverride:ex.cue});
+          seq.push({name:"Rest",round:r,totalRounds:4,timerSec:15,type:"rest",
+            repsOverride:"15\" rest",cueOverride:"Respira"});
+        });
+        if(r<4){
+          seq.push({name:"Recupero attivo",round:r,totalRounds:4,timerSec:60,type:"rest",
+            repsOverride:"60\" — round "+(r+1)+"/4 in arrivo",cueOverride:"Cammina — respira a fondo"});
+        }
+      }
+      return seq;
+    }
+  },
+
+  // ── C7: Circuito Unilaterale ──────────────────────────────────────────────
+  {
+    id:"C7",label:"GIORNO C7",emoji:"🎯",color:"#43A047",
+    title:"Circuito Unilaterale",
+    meta:"HIIT 40/20 · ~24 min · 4 round",
+    totalMin:24,
+    how:"Tutti gli esercizi sono eseguiti su un lato alla volta — prima completi il lato sinistro, poi il destro. Questo schema rivela asimmetrie, migliora la stabilità e richiede più lavoro di core rispetto agli esercizi bilaterali. 6 esercizi, 4 round.",
+    structure:[
+      ["Formato","40\" lavoro / 20\" rest"],
+      ["Schema","Completa SX poi DX per ogni esercizio"],
+      ["Esercizi","6 unilaterali"],
+      ["Round","4"],
+      ["Durata totale","~24 min"],
+    ],
+    exercises:[
+      {n:"1",name:"One Arm Swing",detail:"20\" sx + 20\" dx · stessa potenza",t:"40\"",c:"#43A047"},
+      {n:"2",name:"KB Press",detail:"8 sx poi 8 dx · strict press",t:"40\"",c:"#43A047"},
+      {n:"3",name:"Reverse Lunge",detail:"10 sx poi 10 dx · busto eretto",t:"40\"",c:"#43A047"},
+      {n:"4",name:"KB Row",detail:"10 sx poi 10 dx · schiena piatta",t:"40\"",c:"#43A047"},
+      {n:"5",name:"KB Clean",detail:"6 sx poi 6 dx · rack pulito",t:"40\"",c:"#43A047"},
+      {n:"6",name:"Plank KB Drag",detail:"10 drag · core fisso",t:"40\"",c:"#43A047"},
+      {n:"R",name:"Rest",detail:"20\" tra ogni esercizio",t:"20\"",c:"#1565C0"},
+    ],
+    tips:[
+      "Unilaterale = diagnosi: se noti che un lato è significativamente più debole o meno coordinato, quella è la tua priorità tecnica.",
+      "One Arm Swing: la spalla del braccio libero deve rimanere packed (tirata giù e indietro) — non lasciarla sollevare.",
+      "Non compensare con la schiena durante il KB Press unilaterale — il corpo ha la tendenza a piegarsi lateralmente. Mantieni il core contratto."
+    ],
+    buildSeq:function(){
+      const exs=[
+        {name:"One Arm Swing",reps:"20\" sx → 20\" dx",cue:"Stessa potenza su entrambi i lati"},
+        {name:"KB Press",reps:"8 sx → 8 dx",cue:"Strict press — core compresso, no inclinazione laterale"},
+        {name:"Reverse Lunge",reps:"10 sx → 10 dx",cue:"Busto eretto — ginocchio posteriore vicino al suolo"},
+        {name:"KB Row",reps:"10 sx → 10 dx",cue:"Schiena piatta — tira verso l'anca"},
+        {name:"KB Clean",reps:"6 sx → 6 dx",cue:"Rack pulito — gomito a corpo, zero oscillazione"},
+        {name:"Plank KB Drag",reps:"10 drag dx→sx",cue:"Fianchi fermi — respira durante ogni drag"},
+      ];
+      const seq=[];
+      for(let r=1;r<=4;r++){
+        exs.forEach(ex=>{
+          seq.push({name:ex.name,round:r,totalRounds:4,timerSec:40,type:"work",
+            repsOverride:ex.reps,cueOverride:ex.cue+" · R"+r});
+          seq.push({name:"Rest",round:r,totalRounds:4,timerSec:20,type:"rest",
+            repsOverride:"20\" rest",cueOverride:"Respira"});
+        });
+      }
+      return seq;
+    }
   }
 ];
 
 function getExtraById(id){return EXTRA_WORKOUTS.find(w=>w.id===id);}
 
+function toggleExtraCard(id){
+  const body=document.getElementById("extra-body-"+id);
+  const arrow=document.getElementById("extra-arrow-"+id);
+  const card=document.getElementById("extra-card-"+id);
+  if(!body)return;
+  const open=body.style.display==="block";
+  // chiudi tutte le card aperte
+  EXTRA_WORKOUTS.forEach(w=>{
+    const b=document.getElementById("extra-body-"+w.id);
+    const a=document.getElementById("extra-arrow-"+w.id);
+    const c=document.getElementById("extra-card-"+w.id);
+    if(b){b.style.display="none";}
+    if(a){a.textContent="›";a.style.transform="rotate(0deg)";}
+    if(c){c.style.borderColor="#1E2A35";}
+  });
+  // se era chiusa, apri quella cliccata
+  if(!open){
+    body.style.display="block";
+    arrow.textContent="›";
+    arrow.style.transform="rotate(90deg)";
+    card.style.borderColor=EXTRA_WORKOUTS.find(w=>w.id===id)?.color||"#FF5722";
+    // scroll alla card
+    setTimeout(()=>card.scrollIntoView({behavior:"smooth",block:"nearest"}),50);
+  }
+}
+
 function renderExtra(){
   const cards=EXTRA_WORKOUTS.map(w=>`
-    <button onclick="openExtraDetail('${w.id}')"
-      style="display:block;width:100%;margin:0 0 14px;background:#0F1419;border:1.5px solid #1E2A35;border-radius:20px;overflow:hidden;text-align:left;color:#F0F4F8;padding:0;">
-      <div style="padding:18px 20px 16px;display:flex;align-items:center;gap:14px;">
-        <div style="font-size:42px;flex-shrink:0;">${w.emoji}</div>
-        <div style="flex:1;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${w.color};line-height:1;margin-bottom:3px;">${w.label} — ${w.title}</div>
-          <div style="font-size:12px;color:#607080;margin-bottom:8px;">${w.meta}</div>
-          <div style="font-size:13px;color:#8090A0;line-height:1.5;">${w.how}</div>
+    <div id="extra-card-${w.id}"
+      style="margin:0 0 10px;background:#0F1419;border:1.5px solid #1E2A35;border-radius:18px;overflow:hidden;transition:border-color 0.2s;">
+
+      <!-- HEADER — sempre visibile -->
+      <button onclick="toggleExtraCard('${w.id}')"
+        style="display:flex;width:100%;align-items:center;gap:12px;padding:14px 18px;background:none;border:none;text-align:left;color:#F0F4F8;">
+        <div style="font-size:32px;flex-shrink:0;">${w.emoji}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${w.color};line-height:1.1;">${w.label} — ${w.title}</div>
+          <div style="font-size:11px;color:#607080;margin-top:2px;">${w.meta}</div>
         </div>
-        <div style="font-size:22px;color:#607080;flex-shrink:0;">›</div>
+        <div id="extra-arrow-${w.id}"
+          style="font-size:22px;color:#607080;flex-shrink:0;transition:transform 0.2s;display:inline-block;">›</div>
+      </button>
+
+      <!-- BODY — collassato di default -->
+      <div id="extra-body-${w.id}" style="display:none;">
+        <!-- Descrizione -->
+        <div style="padding:0 18px 14px;font-size:13px;color:#8090A0;line-height:1.6;border-top:1px solid #1E2A35;padding-top:12px;">
+          ${w.how}
+        </div>
+        <!-- Struttura -->
+        <div style="margin:0 18px 12px;padding:11px 14px;background:#080C0F;border-radius:12px;border:1px solid #1E2A35;">
+          <div style="font-size:10px;letter-spacing:3px;color:#607080;margin-bottom:8px;">STRUTTURA</div>
+          ${w.structure.map(([k,v])=>`
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:12px;color:#607080;">${k}</span>
+              <span style="font-size:12px;font-weight:700;">${v}</span>
+            </div>`).join("")}
+        </div>
+        <!-- Esercizi -->
+        <div style="padding:0 18px 12px;">
+          <div style="font-size:10px;letter-spacing:3px;color:#607080;margin-bottom:8px;">SEQUENZA</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            ${w.exercises.map(e=>`
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:#080C0F;border-radius:10px;border:1px solid #1E2A35;">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${e.c};width:24px;flex-shrink:0;">${e.n}</div>
+                <div style="flex:1;">
+                  <div style="font-size:13px;font-weight:700;">${e.name}</div>
+                  <div style="font-size:11px;color:#607080;margin-top:1px;">${e.detail}</div>
+                </div>
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:${e.c};flex-shrink:0;">${e.t}</div>
+              </div>`).join("")}
+          </div>
+        </div>
+        <!-- Tips -->
+        <div style="margin:0 18px 14px;padding:11px 14px;background:#080C0F;border-radius:12px;border-left:3px solid ${w.color};">
+          <div style="font-size:10px;letter-spacing:3px;color:#607080;margin-bottom:7px;">COME ESEGUIRE</div>
+          ${w.tips.map(t=>`<div style="font-size:12px;color:#8090A0;line-height:1.6;margin-bottom:4px;">• ${t}</div>`).join("")}
+        </div>
+        <!-- START -->
+        <div style="padding:0 18px 18px;">
+          <button onclick="startExtraWorkout('${w.id}')"
+            style="width:100%;padding:16px;border-radius:14px;background:${w.color};color:#000;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;border:none;">
+            ▶ START ${w.label}
+          </button>
+        </div>
       </div>
-      <div style="display:flex;gap:6px;padding:0 20px 16px;flex-wrap:wrap;">
-        ${w.exercises.filter(e=>e.n!=="R"&&e.n!=="↺").slice(0,4).map(e=>`
-          <div style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px solid ${w.color}44;color:${w.color};">${e.name}</div>`).join("")}
-      </div>
-    </button>`).join("");
+    </div>`).join("");
 
   return `<div class="screen" style="overflow-y:auto;">
-    <div style="padding:36px 22px 16px;text-align:center;">
+    <div style="padding:32px 22px 14px;text-align:center;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:5px;color:#FF5722;margin-bottom:6px;">WORKOUT</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;">EXTRA HIIT</div>
-      <div style="font-size:13px;color:#607080;margin-top:8px;line-height:1.5;">4 varianti · KB 10 kg · 20–25 min<br>Tocca una card per aprire e avviare</div>
+      <div style="font-size:13px;color:#607080;margin-top:8px;">${EXTRA_WORKOUTS.length} workout · KB 10 kg · Tocca per espandere</div>
     </div>
     <div style="padding:0 16px 20px;">
       ${cards}
