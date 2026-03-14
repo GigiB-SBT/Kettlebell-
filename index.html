@@ -5,7 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="KB Trainer"/>
+<meta name="application-name" content="KB Trainer"/>
 <meta name="theme-color" content="#080C0F"/>
+<meta name="description" content="Kettlebell Trainer — programma strutturato con timer, log e statistiche. Basato sul metodo Pavel AGT."/>
+<link rel="manifest" href="manifest.json"/>
+<!-- Apple touch icons (fallback inline per GitHub Pages single-file) -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23080C0F'/><text y='.9em' font-size='80' x='10'>🪃</text></svg>"/>
 <title>Kettlebell Trainer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
@@ -3234,6 +3241,33 @@ function deactivateProgram(){
 }
 
 render();
+
+// ── PWA: Service Worker + Manifest ───────────────────────────────────────────
+(function(){
+  const manifest={name:"Kettlebell Trainer",short_name:"KB Trainer",description:"Programma kettlebell strutturato con timer, log e statistiche. Metodo Pavel AGT.",start_url:"./",display:"standalone",background_color:"#080C0F",theme_color:"#080C0F",orientation:"portrait",categories:["fitness","health","sports"],icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23080C0F'/%3E%3Ctext y='400' x='56' font-size='400'%3E%F0%9F%8F%8B%EF%B8%8F%3C/text%3E%3C/svg%3E",sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}]};
+  try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
+
+  if('serviceWorker' in navigator){
+    const swCode=`const CACHE='kb-v1';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
+  }
+
+  let dp=null;
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault();dp=e;
+    setTimeout(()=>{
+      if(!dp)return;
+      const ban=document.createElement('div');
+      ban.id='pwa-banner';
+      ban.style.cssText='position:fixed;bottom:80px;left:16px;right:16px;background:#0F1419;border:1.5px solid #FF5722;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:999;box-shadow:0 4px 20px #00000080;';
+      ban.innerHTML='<span style="font-size:26px;">📲</span><div style="flex:1;"><div style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;color:#FF5722;">INSTALLA L\'APP</div><div style="font-size:11px;color:#607080;">Aggiungila alla home per usarla offline</div></div><button id="pwa-ok" style="background:#FF5722;color:#000;border:none;border-radius:8px;padding:8px 14px;font-weight:700;font-size:13px;">Installa</button><button id="pwa-no" style="background:none;border:none;color:#607080;font-size:20px;padding:4px;">✕</button>';
+      document.body.appendChild(ban);
+      document.getElementById('pwa-ok').onclick=async()=>{if(dp){dp.prompt();await dp.userChoice;dp=null;}ban.remove();};
+      document.getElementById('pwa-no').onclick=()=>{ban.remove();dp=null;};
+    },30000);
+  });
+  window.addEventListener('appinstalled',()=>{const b=document.getElementById('pwa-banner');if(b)b.remove();});
+})();
 </script>
 </body>
 </html>
