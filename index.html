@@ -12,7 +12,7 @@
 <meta name="description" content="Kettlebell Trainer — programma strutturato con timer, log e statistiche. Basato sul metodo Pavel AGT."/>
 <link rel="manifest" href="manifest.json"/>
 <!-- Apple touch icons (fallback inline per GitHub Pages single-file) -->
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23080C0F'/><text y='.9em' font-size='80' x='10'>🪃</text></svg>"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23080C0F'/><circle cx='50' cy='62' r='26' fill='%23FF5722'/><circle cx='50' cy='62' r='19' fill='%23CC3D0F'/><rect x='42' y='28' width='16' height='14' rx='4' fill='%23FF5722'/><rect x='36' y='22' width='28' height='10' rx='5' fill='%23FF5722'/><rect x='36' y='22' width='28' height='10' rx='5' fill='none' stroke='%23FF8A65' stroke-width='1.5'/><circle cx='50' cy='62' r='7' fill='%23080C0F'/></svg>"/>
 <title>Kettlebell Trainer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
@@ -415,7 +415,7 @@ const EXERCISES={
   "KB Snatch":             {reps:"5 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+snatch+tutorial+technique",cue:"Traiettoria verticale — KB vicina al corpo"},
   "KB Halo":               {reps:"5 giri/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+halo+exercise+tutorial",cue:"KB capovolta — cerchio stretto, spalle basse"},
   "KB Clean":              {reps:"8 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+clean+technique+tutorial",cue:"Rack pulito — gomito a corpo, zero oscillazione"},
-  "KB Deadlift":           {reps:"8–10 rip",yt:"https://www.youtube.com/results?search_query=kettlebell+deadlift+tutorial+form",cue:"Hinges sull'anca — schiena neutra, spingi il pavimento"},
+  "Rest libero":           {reps:"Recupero",yt:null,cue:"Respira — qualità > velocità"},
   "KB Press":              {reps:"6–8 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+strict+press+tutorial",cue:"Strict press — no dip, spingi con la spalla"},
   "Push Press Alternato":  {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=kettlebell+push+press+alternating+tutorial",cue:"Dip & drive — lockout duro, alterna lati"},
   "Burpee":                {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=burpee+perfect+form+tutorial",cue:"Plank → push-up → salto — ritmo costante"},
@@ -629,6 +629,9 @@ let state={
   })),
   activeProgram:JSON.parse(localStorage.getItem("kb-active-program")||"null"),
   editingEntry:localStorage.getItem("kb-editing-entry")!==null ? Number(localStorage.getItem("kb-editing-entry")) : null,
+  healthHistory:JSON.parse(localStorage.getItem("kb-health-history")||"[]"),
+  healthProfile:JSON.parse(localStorage.getItem("kb-health-profile")||JSON.stringify({height:175,age:40})),
+  healthForm:{weight:"",hrv:"",sleep:"",sleepQ:null},
 };
 let timerInterval=null;
 
@@ -638,6 +641,8 @@ function getTodaySuggested(){const d=new Date().getDay();return d===1?"A":d===3?
 function dayLabel(){return["Dom","Lun","Mar","Mer","Gio","Ven","Sab"][new Date().getDay()];}
 function saveHistory(){localStorage.setItem("kb-history-v2",JSON.stringify(state.history));}
 function saveExternalHistory(){localStorage.setItem("kb-external-history",JSON.stringify(state.externalHistory));}
+function saveHealthHistory(){localStorage.setItem("kb-health-history",JSON.stringify(state.healthHistory));}
+function saveHealthProfile(){localStorage.setItem("kb-health-profile",JSON.stringify(state.healthProfile));}
 function saveExternalHistory(){localStorage.setItem("kb-external-history",JSON.stringify(state.externalHistory));}
 function saveAxeHistory(){localStorage.setItem("kb-axe-history",JSON.stringify(state.axeHistory));}
 function saveAxeProgress(){localStorage.setItem("kb-axe-progress",JSON.stringify(state.axeProgress));}
@@ -669,6 +674,7 @@ function navHTML(active){
     {id:"axe",icon:"🪓",label:"AXE"},
     {id:"extra",icon:"⚡",label:"EXTRA"},
     {id:"programs",icon:"📋",label:"PROGRAMMI"},
+    {id:"health",icon:"❤️",label:"SALUTE"},
     {id:"log",icon:"📊",label:"STATS"},
   ];
   return `<nav class="bottom-nav">${tabs.map(t=>`
@@ -977,7 +983,16 @@ function renderWorkout(){
       </div>
       <button onclick="stopWorkoutEarly()" style="font-size:11px;font-weight:700;color:#EF5350;background:#1A0808;border:1px solid #EF535040;border-radius:8px;padding:6px 10px;">⏹ Stop</button>
     </div>
-    <div class="progress-wrap"><div class="progress-bar" style="width:${progress}%;background:${accentColor}"></div></div>
+    <!-- Barra avanzamento con % -->
+    <div style="padding:4px 18px 8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <span style="font-size:10px;letter-spacing:2px;color:#607080;">AVANZAMENTO</span>
+        <span style="font-size:12px;font-weight:700;color:${accentColor};">${progress}%</span>
+      </div>
+      <div style="height:5px;background:#1E2A35;border-radius:3px;overflow:hidden;">
+        <div style="height:100%;width:${progress}%;background:${accentColor};border-radius:3px;transition:width 0.4s ease;box-shadow:0 0 8px ${accentColor}88;"></div>
+      </div>
+    </div>
     <div class="ex-name-wrap">
       <div class="ex-name" style="font-size:${exFontSize};color:${isRest?'#607080':'#F0F4F8'}">${step.name.toUpperCase()}</div>
       ${isAmrap?'<div class="amrap-sub">AS MANY ROUNDS AS POSSIBLE</div>':""}
@@ -2558,6 +2573,138 @@ const EXTRA_WORKOUTS=[
       }
       return seq;
     }
+  },
+
+  // ── D1: Total Tension (Pavel / StrongFirst adattato KB singola) ───────────
+  {
+    id:"D1",label:"GIORNO D1",emoji:"🔗",color:"#C62828",
+    title:"Total Tension Complex",
+    meta:"Pavel / StrongFirst · ~25 min · Step Cycle 6 sett.",
+    totalMin:25,
+    how:"Complesso Pavel adattato a KB singola. 4 esercizi in sequenza senza posare: Clean → Strict Press → Front Squat → Renegade Row. Esegui tutto sul lato SX poi DX = 1 set. Schema piramidale: sali di 1 rep per set poi scendi. Rest libero tra i set.",
+    structure:[
+      ["Schema","Clean → Press → Front Squat → Renegade Row"],
+      ["Esecuzione","Lato SX completo → lato DX"],
+      ["Renegade Row","Sempre 1 rep/lato (indipendente)"],
+      ["Rest","Libero — 30\" a 3 min"],
+      ["Progressione","Step cycle: +1 rep al picco ogni 2 settimane"],
+    ],
+    exercises:[
+      {n:"1",name:"KB Clean",detail:"Dal basso → rack pulito · gomito dentro",t:"SX→DX",c:"#C62828"},
+      {n:"2",name:"KB Press",detail:"Strict — no dip · tutto il corpo teso · lockout",t:"SX→DX",c:"#C62828"},
+      {n:"3",name:"Front Squat",detail:"Da rack · squat profondo · pausa 1\" in basso",t:"SX→DX",c:"#C62828"},
+      {n:"4",name:"Renegade Row",detail:"Plank alto su KB · spingi giù con mano a terra · tira verso anca · no rotazione fianchi",t:"1/lato",c:"#C62828"},
+    ],
+    tips:[
+      "Il Renegade Row è il fulcro del complesso — spingi forte verso il basso con la mano a terra mentre tiri la KB. Questo crea la tensione totale che dà nome al programma.",
+      "Strict Press: contrai glutes, core e gambe durante la spinta. Non è solo un esercizio di spalla — è tutto il corpo.",
+      "Progressione 6 settimane: sett.1-2 picco 3 rep (1-2-3-2-1), sett.3-4 picco 4 rep, sett.5-6 picco 5 rep. Sempre lo stesso peso — la progressione è il volume."
+    ],
+    buildSeq:function(){
+      // Leggi la settimana corrente dallo storico per determinare il picco
+      // Default: picco 3 (sett 1-2). Utente può forzare dal log.
+      const sessD1=typeof state!=="undefined"
+        ?state.history.filter(h=>h.day==="extra_D1").length
+        :0;
+      const peak=sessD1<6?3:sessD1<12?4:5;
+      // Piramide: 1,2,...,peak,...,2,1
+      const pyramid=[];
+      for(let i=1;i<=peak;i++) pyramid.push(i);
+      for(let i=peak-1;i>=1;i--) pyramid.push(i);
+
+      const seq=[];
+      pyramid.forEach((reps,si)=>{
+        // Clean + Press (reps lato)
+        seq.push({name:"KB Clean",round:si+1,totalRounds:pyramid.length,timerSec:null,type:"ladder",
+          repsOverride:`${reps} rep SX → ${reps} rep DX`,
+          cueOverride:"Dal basso → rack pulito — gomito dentro"});
+        seq.push({name:"KB Press",round:si+1,totalRounds:pyramid.length,timerSec:null,type:"ladder",
+          repsOverride:`${reps} rep SX → ${reps} rep DX`,
+          cueOverride:"Strict press — tutto il corpo teso · lockout completo"});
+        // Front Squat (reps lato)
+        seq.push({name:"Front Squat",round:si+1,totalRounds:pyramid.length,timerSec:null,type:"ladder",
+          repsOverride:`${reps} rep SX → ${reps} rep DX`,
+          cueOverride:"Da rack — squat profondo · pausa 1\" in basso"});
+        // Renegade Row sempre 1 rep/lato
+        seq.push({name:"Renegade Row",round:si+1,totalRounds:pyramid.length,timerSec:null,type:"ladder",
+          repsOverride:"1 rep SX → 1 rep DX",
+          cueOverride:"Plank rigido — spingi giù · tira verso l'anca · zero rotazione"});
+        // Rest libero tra set (timer 90" suggerito, skip disponibile)
+        if(si<pyramid.length-1){
+          seq.push({name:"Rest",round:si+1,totalRounds:pyramid.length,timerSec:90,type:"rest",
+            repsOverride:`Prossimo set: ${pyramid[si+1]} rep · rest quando sei pronto`,
+            cueOverride:"Rest libero — 30\" min, 3' max"});
+        }
+      });
+      return seq;
+    }
+  },
+
+  // ── D1: Total Tension Complex (adattato KB singola) ───────────────────────
+  {
+    id:"D1",label:"GIORNO D1",emoji:"🔩",color:"#FF1744",
+    title:"Total Tension Complex",
+    meta:"Pavel / StrongFirst · ~25 min · Step Cycle 6 sett.",
+    totalMin:25,
+    how:"Complesso Pavel adattato a KB singola — Clean → Strict Press → Front Squat → Renegade Row, tutto su un lato senza posare. Schema piramidale: sali di 1 rep per set poi scendi. Il Renegade Row è sempre 1 rep/lato. Tensione totale su ogni muscolo per tutta la durata del set.",
+    structure:[
+      ["Schema","Clean → Press → Front Squat → Row"],
+      ["Esecuzione","Lato SX completo → poi DX"],
+      ["Formato","Piramide 1-2-3-...-3-2-1"],
+      ["Row","Sempre 1 rep/lato indipendente"],
+      ["Progressione","+1 rep al picco ogni 2 sett."],
+      ["Durata totale","~25 min"],
+    ],
+    exercises:[
+      {n:"1",name:"KB Clean",detail:"Traiettoria vicina al corpo → rack preciso",t:"SX→DX",c:"#FF1744"},
+      {n:"2",name:"KB Press",detail:"Strict — nessun dip, tutto il corpo teso",t:"SX→DX",c:"#FF1744"},
+      {n:"3",name:"Front Squat",detail:"KB in rack — squat profondo, pausa 1\" in basso",t:"SX→DX",c:"#FF1744"},
+      {n:"4",name:"Renegade Row",detail:"Plank alto su KB — spingi giù, tira verso l'anca",t:"1/lato",c:"#FF1744"},
+      {n:"R",name:"Rest libero",detail:"30\"–3' a seconda della fatica",t:"libero",c:"#1565C0"},
+    ],
+    tips:[
+      "Renegade Row: spingi FORTE con la mano a terra mentre tiri — questa tensione irradiante è il cuore del programma.",
+      "Strict Press: glutes, core e gambe contratti durante tutta la spinta — non è solo un esercizio di spalla.",
+      "Progressione: sett. 1–2 picco 3 rep, sett. 3–4 picco 4, sett. 5–6 picco 5. Non anticipare — consolida prima di salire."
+    ],
+    buildSeq:function(){
+      // Leggi picco dal localStorage o default 3
+      const saved=localStorage.getItem("kb-d1-peak");
+      const peak=saved?Number(saved):3;
+      // Piramide: 1,2,...,peak,...,2,1
+      const pyramid=[];
+      for(let i=1;i<=peak;i++) pyramid.push(i);
+      for(let i=peak-1;i>=1;i--) pyramid.push(i);
+
+      const seq=[];
+      pyramid.forEach((reps,si)=>{
+        // Lato SX
+        seq.push({name:"KB Clean",round:si+1,totalRounds:pyramid.length,timerSec:null,type:"ladder",
+          repsOverride:`${reps} rep — lato SX`,cueOverride:"Traiettoria vicina al corpo → rack preciso"});
+        seq.push({name:"KB Press",round:si+1,totalRounds:pyramid.length,timerSec:null,type:"ladder",
+          repsOverride:`${reps} rep — lato SX`,cueOverride:"Strict — tutto il corpo teso, lockout duro"});
+        seq.push({name:"Front Squat",round:si+1,totalRounds:pyramid.length,timerSec:null,type:"ladder",
+          repsOverride:`${reps} rep — lato SX`,cueOverride:"KB in rack — squat profondo, pausa 1\" in basso"});
+        seq.push({name:"Renegade Row",round:si+1,totalRounds:pyramid.length,timerSec:null,type:"ladder",
+          repsOverride:"1 rep — lato SX",cueOverride:"Plank alto — spingi giù con DX, tira SX verso l'anca"});
+        // Lato DX
+        seq.push({name:"KB Clean",round:si+1,totalRounds:pyramid.length,timerSec:null,type:"ladder",
+          repsOverride:`${reps} rep — lato DX`,cueOverride:"Stesso pattern — rack pulito DX"});
+        seq.push({name:"KB Press",round:si+1,totalRounds:pyramid.length,timerSec:null,type:"ladder",
+          repsOverride:`${reps} rep — lato DX`,cueOverride:"Strict — lockout completo, poi riabbassa lento"});
+        seq.push({name:"Front Squat",round:si+1,totalRounds:pyramid.length,timerSec:null,type:"ladder",
+          repsOverride:`${reps} rep — lato DX`,cueOverride:"KB in rack DX — stessa qualità del lato SX"});
+        seq.push({name:"Renegade Row",round:si+1,totalRounds:pyramid.length,timerSec:null,type:"ladder",
+          repsOverride:"1 rep — lato DX",cueOverride:"Plank alto — spingi giù con SX, tira DX verso l'anca"});
+        // Rest (non sull'ultimo set)
+        if(si<pyramid.length-1){
+          seq.push({name:"Rest libero",round:si+1,totalRounds:pyramid.length,timerSec:90,type:"rest",
+            repsOverride:`Set ${si+1}/${pyramid.length} completato · picco: ${peak} rep`,
+            cueOverride:"Rest 90\" o più se necessario — qualità > velocità"});
+        }
+      });
+      return seq;
+    }
   }
 ];
 
@@ -2753,6 +2900,376 @@ function startExtraWorkout(id){
   if(step.timerSec)startTimerInterval();
 }
 
+// ── RENDER HEALTH ─────────────────────────────────────────────────────────────
+function renderHealth(){
+  const h=state.healthHistory;
+  const prof=state.healthProfile;
+  const f=state.healthForm;
+
+  // ── KPI ultimi valori ──────────────────────────────────────────────────────
+  const lastWeight=h.filter(e=>e.weight).slice(-1)[0];
+  const lastHRV=h.filter(e=>e.hrv).slice(-1)[0];
+  const lastSleep=h.filter(e=>e.sleep).slice(-1)[0];
+
+  // BMI calcolato
+  const bmi=lastWeight&&prof.height
+    ?(lastWeight.weight/((prof.height/100)**2)).toFixed(1)
+    :null;
+  const bmiColor=!bmi?"#607080":bmi<18.5?"#2196F3":bmi<25?"#00BFA5":bmi<30?"#FFC107":"#EF5350";
+  const bmiLabel=!bmi?"—":bmi<18.5?"Sottopeso":bmi<25?"Normopeso":bmi<30?"Sovrappeso":"Obesità";
+
+  // ── Trend sparkline SVG ────────────────────────────────────────────────────
+  function sparkline(data, key, color, unit=""){
+    const vals=data.filter(e=>e[key]!=null).slice(-14);
+    if(vals.length<2) return `<div style="font-size:12px;color:#3A4A55;text-align:center;padding:16px 0;">Inserisci almeno 2 misurazioni</div>`;
+    const nums=vals.map(e=>e[key]);
+    const mn=Math.min(...nums), mx=Math.max(...nums);
+    const W=260,H=60;
+    const x=(i)=>Math.round(i/(vals.length-1)*(W-40)+10);
+    const y=(v)=>Math.round(H-4-((v-mn)/(mx-mn||1))*(H-12));
+    const pts=nums.map((v,i)=>`${x(i)},${y(v)}`).join(" ");
+    const last=nums[nums.length-1];
+    const prev=nums[nums.length-2];
+    const trend=last>prev?"↑":last<prev?"↓":"→";
+    const trendCol=key==="weight"?(last<prev?"#00BFA5":"#EF5350"):(last>prev?"#00BFA5":"#EF5350");
+    // Linea media
+    const avg=(nums.reduce((a,b)=>a+b,0)/nums.length);
+    const avgY=y(avg);
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:24px;font-weight:700;color:#F0F4F8;">${last}${unit}</span>
+        <div style="text-align:right;">
+          <div style="font-size:16px;color:${trendCol};font-weight:700;">${trend}</div>
+          <div style="font-size:10px;color:#607080;">media ${avg.toFixed(1)}${unit}</div>
+        </div>
+      </div>
+      <svg width="${W}" height="${H}" style="overflow:visible;">
+        <!-- Griglia -->
+        <line x1="0" y1="${y(mn)}" x2="${W-30}" y2="${y(mn)}" stroke="#1E2A35" stroke-width="1"/>
+        <line x1="0" y1="${y(mx)}" x2="${W-30}" y2="${y(mx)}" stroke="#1E2A35" stroke-width="1"/>
+        <!-- Media tratteggiata -->
+        <line x1="0" y1="${avgY}" x2="${W-30}" y2="${avgY}" stroke="${color}44" stroke-width="1" stroke-dasharray="4,3"/>
+        <!-- Annotazioni Y -->
+        <text x="${W-28}" y="${y(mx)+4}" fill="#3A4A55" font-size="9" font-family="DM Sans,sans-serif">${mx}${unit}</text>
+        <text x="${W-28}" y="${y(mn)+4}" fill="#3A4A55" font-size="9" font-family="DM Sans,sans-serif">${mn}${unit}</text>
+        <!-- Linea -->
+        <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Punti -->
+        ${nums.map((v,i)=>i===nums.length-1
+          ?`<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="${color}"/>`
+          :`<circle cx="${x(i)}" cy="${y(v)}" r="2" fill="${color}44"/>`).join("")}
+      </svg>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;">
+        <span style="font-size:10px;color:#3A4A55;">${vals[0].date}</span>
+        <span style="font-size:10px;color:#3A4A55;">${vals[vals.length-1].date}</span>
+      </div>`;
+  }
+
+  // ── Qualità sonno label ────────────────────────────────────────────────────
+  const sleepQOpts=["😴","😐","🙂","😊","🌟"];
+
+  // ── Form inserimento ───────────────────────────────────────────────────────
+  const form=`
+    <div style="margin:0 16px 16px;background:#0F1419;border:1.5px solid #1E2A35;border-radius:18px;padding:18px;">
+      <div style="font-size:10px;letter-spacing:3px;color:#607080;margin-bottom:14px;">+ NUOVA MISURAZIONE</div>
+      <div style="display:flex;gap:10px;margin-bottom:12px;">
+        <div style="flex:1;">
+          <label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">PESO (kg)</label>
+          <input class="log-input" type="number" step="0.1" placeholder="es. 78.5"
+            value="${f.weight||''}" oninput="state.healthForm.weight=this.value"
+            inputmode="decimal" style="width:100%;"/>
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">HRV (ms)</label>
+          <input class="log-input" type="number" placeholder="es. 55"
+            value="${f.hrv||''}" oninput="state.healthForm.hrv=this.value"
+            inputmode="numeric" style="width:100%;"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <div style="flex:1;">
+          <label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">SONNO (ore)</label>
+          <input class="log-input" type="number" step="0.5" placeholder="es. 7.5"
+            value="${f.sleep||''}" oninput="state.healthForm.sleep=this.value"
+            inputmode="decimal" style="width:100%;"/>
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">QUALITÀ SONNO</label>
+          <div style="display:flex;gap:6px;margin-top:6px;">
+            ${sleepQOpts.map((e,i)=>`
+              <button onclick="state.healthForm.sleepQ=${i+1};render()"
+                style="flex:1;padding:6px 2px;border-radius:8px;font-size:16px;border:1.5px solid ${f.sleepQ===i+1?'#FFC107':'#1E2A35'};background:${f.sleepQ===i+1?'#FFC10720':'#080C0F'};">
+                ${e}
+              </button>`).join("")}
+          </div>
+        </div>
+      </div>
+      <button onclick="saveHealthEntry()"
+        style="width:100%;padding:14px;border-radius:14px;background:#00BFA5;color:#000;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;border:none;">
+        ✓ SALVA MISURAZIONE
+      </button>
+    </div>`;
+
+  // ── KPI cards ──────────────────────────────────────────────────────────────
+  const kpiCards=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 16px;">
+      <div style="background:#0F1419;border:1.5px solid #1E2A35;border-radius:16px;padding:14px;">
+        <div style="font-size:10px;letter-spacing:2px;color:#607080;margin-bottom:6px;">PESO</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#2196F3;">${lastWeight?lastWeight.weight+" kg":"—"}</div>
+        <div style="font-size:11px;color:#607080;margin-top:2px;">${lastWeight?lastWeight.date:""}</div>
+      </div>
+      <div style="background:#0F1419;border:1.5px solid ${bmiColor}44;border-radius:16px;padding:14px;">
+        <div style="font-size:10px;letter-spacing:2px;color:#607080;margin-bottom:6px;">BMI</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${bmiColor};">${bmi||"—"}</div>
+        <div style="font-size:11px;color:${bmiColor};margin-top:2px;">${bmiLabel}</div>
+      </div>
+      <div style="background:#0F1419;border:1.5px solid #1E2A35;border-radius:16px;padding:14px;">
+        <div style="font-size:10px;letter-spacing:2px;color:#607080;margin-bottom:6px;">HRV</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#9C27B0;">${lastHRV?lastHRV.hrv+" ms":"—"}</div>
+        <div style="font-size:11px;color:#607080;margin-top:2px;">${lastHRV?lastHRV.date:""}</div>
+      </div>
+      <div style="background:#0F1419;border:1.5px solid #1E2A35;border-radius:16px;padding:14px;">
+        <div style="font-size:10px;letter-spacing:2px;color:#607080;margin-bottom:6px;">SONNO</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#FFC107;">${lastSleep?lastSleep.sleep+"h":"—"}</div>
+        <div style="font-size:11px;color:#607080;margin-top:2px;">${lastSleep&&lastSleep.sleepQ?sleepQOpts[lastSleep.sleepQ-1]:""}</div>
+      </div>
+    </div>`;
+
+  // ── Grafici trend ──────────────────────────────────────────────────────────
+  function trendCard(title, key, color, unit){
+    const vals=h.filter(e=>e[key]!=null);
+    return `
+      <div style="background:#0F1419;border:1.5px solid #1E2A35;border-radius:16px;padding:16px;margin:0 16px 12px;">
+        <div style="font-size:10px;letter-spacing:3px;color:#607080;margin-bottom:10px;">TREND ${title}</div>
+        ${vals.length>=2?sparkline(h,key,color,unit):`<div style="font-size:12px;color:#3A4A55;text-align:center;padding:12px 0;">Inserisci almeno 2 misurazioni per il grafico</div>`}
+      </div>`;
+  }
+
+  // ── Profilo (altezza, età) ─────────────────────────────────────────────────
+  const profileCard=`
+    <div style="margin:0 16px 16px;background:#0F1419;border:1.5px solid #1E2A35;border-radius:16px;padding:16px;">
+      <div style="font-size:10px;letter-spacing:3px;color:#607080;margin-bottom:12px;">PROFILO (per calcolo BMI)</div>
+      <div style="display:flex;gap:10px;">
+        <div style="flex:1;">
+          <label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">ALTEZZA (cm)</label>
+          <input class="log-input" type="number" placeholder="175"
+            value="${prof.height||''}"
+            onchange="state.healthProfile.height=Number(this.value);saveHealthProfile();render()"
+            inputmode="numeric" style="width:100%;"/>
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">ETÀ</label>
+          <input class="log-input" type="number" placeholder="40"
+            value="${prof.age||''}"
+            onchange="state.healthProfile.age=Number(this.value);saveHealthProfile()"
+            inputmode="numeric" style="width:100%;"/>
+        </div>
+      </div>
+    </div>`;
+
+  // ── Storico misurazioni ────────────────────────────────────────────────────
+  const histRows=h.length===0
+    ?`<div style="text-align:center;padding:20px;color:#3A4A55;font-size:13px;">Nessuna misurazione ancora</div>`
+    :[...h].reverse().slice(0,20).map((e,i)=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#080C0F;border-radius:10px;margin-bottom:6px;border:1px solid #1E2A35;">
+        <div style="flex:1;">
+          <div style="font-size:11px;color:#607080;">${e.date}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">
+            ${e.weight?`<span style="font-size:13px;font-weight:700;color:#2196F3;">${e.weight} kg</span>`:""}
+            ${e.weight&&prof.height?`<span style="font-size:12px;color:#607080;">BMI ${(e.weight/((prof.height/100)**2)).toFixed(1)}</span>`:""}
+            ${e.hrv?`<span style="font-size:13px;font-weight:700;color:#9C27B0;">HRV ${e.hrv} ms</span>`:""}
+            ${e.sleep?`<span style="font-size:13px;font-weight:700;color:#FFC107;">${e.sleep}h</span>`:""}
+            ${e.sleepQ?`<span style="font-size:13px;">${sleepQOpts[e.sleepQ-1]}</span>`:""}
+          </div>
+        </div>
+        <button onclick="deleteHealthEntry(${h.length-1-i})" style="background:none;color:#607080;font-size:16px;padding:4px 8px;">🗑</button>
+      </div>`).join("");
+
+  // ── Tachimetro BMI ────────────────────────────────────────────────────────
+  function bmiChart(){
+    const bmiVals=h.filter(e=>e.weight&&prof.height)
+      .map(e=>({date:e.date,bmi:+(e.weight/((prof.height/100)**2)).toFixed(1)}))
+      .slice(-14);
+
+    const curBmi=bmi?Number(bmi):null;
+    const curColor=!curBmi?"#607080":curBmi<18.5?"#2196F3":curBmi<25?"#00BFA5":curBmi<30?"#FFC107":"#EF5350";
+
+    // Geometria — pivot in basso al centro, arco semicircolare 180°
+    const CX=150, CY=140, R=110, r=72;
+    const BMI_MIN=14, BMI_MAX=36;
+    // Arco da 180° (sx) a 0° (dx) — senso antiorario = da sx verso dx passando per l'alto
+    const START_DEG=180, END_DEG=0;
+
+    function degToRad(d){return d*Math.PI/180;}
+    // Mappa BMI → angolo: 14=180°, 36=0° (sx→dx passando per l'alto)
+    function bmiToAngle(v){
+      const clamped=Math.max(BMI_MIN,Math.min(BMI_MAX,v));
+      return 180-(clamped-BMI_MIN)/(BMI_MAX-BMI_MIN)*180;
+    }
+    function polarToXY(angleDeg,radius){
+      const rad=degToRad(angleDeg);
+      return {x:+(CX+radius*Math.cos(rad)).toFixed(2), y:+(CY-radius*Math.sin(rad)).toFixed(2)};
+    }
+    function arcPath(startBmi,endBmi,outerR,innerR){
+      const sa=bmiToAngle(startBmi), ea=bmiToAngle(endBmi);
+      const s1=polarToXY(sa,outerR), e1=polarToXY(ea,outerR);
+      const s2=polarToXY(ea,innerR), e2=polarToXY(sa,innerR);
+      return `M ${s1.x} ${s1.y} A ${outerR} ${outerR} 0 0 1 ${e1.x} ${e1.y} L ${s2.x} ${s2.y} A ${innerR} ${innerR} 0 0 0 ${e2.x} ${e2.y} Z`;
+    }
+
+    // Fasce
+    const zones=[
+      {min:14,  max:18.5, color:"#1565C0", label:"Sotto"},
+      {min:18.5,max:25,   color:"#2E7D32", label:"Normale"},
+      {min:25,  max:30,   color:"#F57F17", label:"Sovrappeso"},
+      {min:30,  max:36,   color:"#B71C1C", label:"Obesità"},
+    ];
+    const zoneArcs=zones.map(z=>`<path d="${arcPath(z.min,z.max,R,r)}" fill="${z.color}"/>`).join("");
+
+    // Etichette zone dentro l'arco
+    const zoneLabels=zones.map(z=>{
+      const mid=(z.min+z.max)/2;
+      const pos=polarToXY(bmiToAngle(mid),(R+r)/2+2);
+      const fontSize=z.label.length>7?"8":"10";
+      return `<text x="${pos.x}" y="${pos.y}" text-anchor="middle" dominant-baseline="middle"
+        fill="#FFFFFF" font-size="${fontSize}" font-family="DM Sans,sans-serif" font-weight="700">${z.label}</text>`;
+    }).join("");
+
+    // Tacche di separazione + BMI numerico + kg corrispondenti
+    const soglie=[18.5,25,30];
+    const tickMarks=soglie.map(v=>{
+      const ang=bmiToAngle(v);
+      const inner=polarToXY(ang,r-2);
+      const outer=polarToXY(ang,R+2);
+      // kg corrispondenti alla soglia
+      const kgSoglia=prof.height?(v*((prof.height/100)**2)).toFixed(0):"";
+      const bmiLabel_pos=polarToXY(ang,R+16);
+      const kgLabel_pos=polarToXY(ang,R+28);
+      return `
+        <line x1="${inner.x}" y1="${inner.y}" x2="${outer.x}" y2="${outer.y}" stroke="#0F1419" stroke-width="2.5"/>
+        <text x="${bmiLabel_pos.x}" y="${bmiLabel_pos.y}" text-anchor="middle" dominant-baseline="middle"
+          fill="#F0F4F8" font-size="11" font-family="DM Sans,sans-serif" font-weight="700">${v}</text>
+        ${kgSoglia?`<text x="${kgLabel_pos.x}" y="${kgLabel_pos.y}" text-anchor="middle" dominant-baseline="middle"
+          fill="#607080" font-size="9" font-family="DM Sans,sans-serif">${kgSoglia} kg</text>`:""}`;
+    }).join("");
+
+    // Etichette BMI min/max agli estremi
+    const leftPos=polarToXY(180,R+16);
+    const rightPos=polarToXY(0,R+16);
+    const extremes=`
+      <text x="${leftPos.x}" y="${leftPos.y}" text-anchor="middle" dominant-baseline="middle"
+        fill="#8090A0" font-size="10" font-family="DM Sans,sans-serif">${BMI_MIN}</text>
+      <text x="${rightPos.x}" y="${rightPos.y}" text-anchor="middle" dominant-baseline="middle"
+        fill="#8090A0" font-size="10" font-family="DM Sans,sans-serif">${BMI_MAX}</text>`;
+
+    // Ago sottile e preciso
+    let needleEl="";
+    if(curBmi){
+      const ang=bmiToAngle(curBmi);
+      const tip=polarToXY(ang,R-6);
+      const base=polarToXY(ang,-(r-20)); // base corta oltre il pivot
+      needleEl=`
+        <line x1="${base.x}" y1="${base.y}" x2="${tip.x}" y2="${tip.y}"
+          stroke="${curColor}" stroke-width="3" stroke-linecap="round"
+          style="filter:drop-shadow(0 0 4px ${curColor})"/>
+        <circle cx="${CX}" cy="${CY}" r="8" fill="#0F1419" stroke="${curColor}" stroke-width="2.5"/>
+        <circle cx="${CX}" cy="${CY}" r="3.5" fill="${curColor}"/>`;
+    }
+
+    // Valore BMI + label FUORI dall'SVG, sotto il tachimetro
+    const bmiDisplay=curBmi
+      ?`<div style="text-align:center;margin-top:-8px;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;color:${curColor};line-height:1;">${curBmi}</div>
+          <div style="font-size:14px;font-weight:700;color:${curColor};letter-spacing:1px;">${bmiLabel}</div>
+          ${prof.height?`<div style="font-size:12px;color:#607080;margin-top:2px;">Altezza ${prof.height} cm · Peso ${lastWeight?lastWeight.weight+" kg":"—"}</div>`:""}
+        </div>`
+      :`<div style="text-align:center;margin-top:-8px;">
+          <div style="font-size:13px;color:#607080;padding:8px 0;">Inserisci peso e altezza nel profilo</div>
+        </div>`;
+
+    // Trend
+    let trendLine="";
+    if(bmiVals.length>=2){
+      const nums=bmiVals.map(e=>e.bmi);
+      const last=nums[nums.length-1];
+      const prev=nums[nums.length-2];
+      const diff=(last-prev).toFixed(1);
+      const tCol=last<prev?"#00BFA5":last>prev?"#EF5350":"#607080";
+      const tArrow=last<prev?"↓":last>prev?"↑":"→";
+      trendLine=`
+        <div style="display:flex;justify-content:center;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid #1E2A35;">
+          <span style="font-size:12px;color:#607080;">Precedente: <b style="color:#F0F4F8">${prev}</b></span>
+          <span style="font-size:13px;color:${tCol};font-weight:700;">${tArrow} ${Math.abs(diff)}</span>
+        </div>`;
+    }
+
+    return `
+      <div style="background:#0F1419;border:1.5px solid ${curColor}44;border-radius:18px;padding:16px 16px 14px;margin:0 16px 12px;">
+        <div style="font-size:10px;letter-spacing:3px;color:#607080;margin-bottom:10px;">BMI — INDICE DI MASSA CORPOREA</div>
+        <div style="display:flex;justify-content:center;">
+          <svg width="300" height="150" viewBox="0 0 300 150" style="overflow:visible;">
+            <!-- Sfondo arco base -->
+            <path d="${arcPath(BMI_MIN,BMI_MAX,R,r)}" fill="#1A2535"/>
+            ${zoneArcs}
+            ${tickMarks}
+            ${extremes}
+            ${zoneLabels}
+            ${needleEl}
+          </svg>
+        </div>
+        ${bmiDisplay}
+        ${trendLine}
+      </div>`;
+  }
+
+
+  return `<div class="screen" style="overflow-y:auto;">
+    <div style="padding:32px 22px 16px;text-align:center;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:5px;color:#E91E63;margin-bottom:6px;">MONITORAGGIO</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;">SALUTE</div>
+      <div style="font-size:13px;color:#607080;margin-top:6px;">Peso · BMI · HRV · Sonno</div>
+    </div>
+    ${kpiCards}
+    ${form}
+    ${profileCard}
+    ${trendCard("PESO","weight","#2196F3"," kg")}
+    ${bmiChart()}
+    ${trendCard("HRV","hrv","#9C27B0"," ms")}
+    ${trendCard("SONNO","sleep","#FFC107","h")}
+    <div style="margin:0 16px 12px;">
+      <div style="font-size:10px;letter-spacing:3px;color:#607080;margin-bottom:10px;">STORICO MISURAZIONI</div>
+      ${histRows}
+    </div>
+    <div style="height:20px;"></div>
+    ${navHTML("health")}
+  </div>`;
+}
+
+function saveHealthEntry(){
+  const f=state.healthForm;
+  if(!f.weight&&!f.hrv&&!f.sleep){
+    alert("Inserisci almeno un valore.");return;
+  }
+  const entry={
+    date:new Date().toLocaleDateString("it-IT"),
+    weight:f.weight?Number(f.weight):null,
+    hrv:f.hrv?Number(f.hrv):null,
+    sleep:f.sleep?Number(f.sleep):null,
+    sleepQ:f.sleepQ||null,
+  };
+  state.healthHistory.push(entry);
+  saveHealthHistory();
+  state.healthForm={weight:"",hrv:"",sleep:"",sleepQ:null};
+  render();
+}
+
+function deleteHealthEntry(i){
+  if(confirm("Elimina questa misurazione?")){
+    state.healthHistory.splice(i,1);
+    saveHealthHistory();render();
+  }
+}
+
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function render(){
   const app=document.getElementById("app");
@@ -2765,6 +3282,7 @@ function render(){
   else if(state.tab==="programs")   app.innerHTML=renderPrograms();
   else if(state.tab==="extra")      app.innerHTML=renderExtra();
   else if(state.tab==="extra-detail")app.innerHTML=renderExtraDetail();
+  else if(state.tab==="health")     app.innerHTML=renderHealth();
   else                               app.innerHTML=renderHome();
 }
 
