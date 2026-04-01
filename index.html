@@ -862,7 +862,17 @@ let state={
   axeProgress:JSON.parse(localStorage.getItem("kb-axe-progress")||JSON.stringify({
     repsPerSet:4,currentSets:0,stepRPE:8,phase:"fase 1",
   })),
-  activeProgram:JSON.parse(localStorage.getItem("kb-active-program")||"null"),
+  activeProgram:(function(){
+    try{
+      const ap=JSON.parse(localStorage.getItem("kb-active-program")||"null");
+      // Valida struttura — deve avere days come array
+      if(ap&&(!ap.days||!Array.isArray(ap.days))){
+        localStorage.removeItem("kb-active-program");
+        return null;
+      }
+      return ap;
+    }catch(e){return null;}
+  })(),
   editingEntry:localStorage.getItem("kb-editing-entry")!==null ? Number(localStorage.getItem("kb-editing-entry")) : null,
   healthHistory:JSON.parse(localStorage.getItem("kb-health-history")||"[]"),
   healthProfile:JSON.parse(localStorage.getItem("kb-health-profile")||JSON.stringify({height:175,age:40})),
@@ -1062,12 +1072,12 @@ function getSmartSuggestion(){
 // ── RENDER HOME ───────────────────────────────────────────────────────────────
 function renderHome(){
   const suggested=getTodaySuggested();
-  const cards=Object.entries(DAYS).map(([key,day])=>{
+  const cards=Object.entries(DAYS).filter(([key])=>["A","B","C"].includes(key)).map(([key,day])=>{
     const ap=state.activeProgram;
     const isToday=suggested===key;
     // Evidenzia giorno suggerito dal programma attivo
     const todayDow=new Date().getDay();
-    const apToday=ap?ap.days.find(d=>d.d===todayDow&&d.act!=="—"):null;
+    const apToday=ap&&ap.days?ap.days.find(d=>d.d===todayDow&&d.act!=="—"):null;
     const isApToday=ap&&apToday&&(apToday.act===key||apToday.act===key+"+");
     const badge=isToday||isApToday?`<div class="today-badge" style="background:${day.color}">OGGI</div>`:"";
     const cardShadow=isToday||isApToday?('0 0 28px '+day.color+'30'):'none';
@@ -1090,7 +1100,7 @@ function renderHome(){
     const ap=state.activeProgram;
     const todayDow=new Date().getDay();
     const DAYS_IT=["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
-    const chips=ap.days.filter(d=>d.act!=="—").map(d=>`
+    const chips=ap.days?.filter(d=>d.act!=="—").map(d=>`
       <div class="apb-day" style="border-color:${d.col};color:${d.col};background:${d.col}18;">
         ${DAYS_IT[d.d]} ${d.act}
       </div>`).join("");
@@ -2107,7 +2117,7 @@ function renderPrograms(){
   // ── Microcicli ──
   const microCards=MICROCYCLES.map(function(mc){
     const isActive=ap&&ap.id===mc.id;
-    const sortedDays=[...mc.days].sort((a,b)=>a.d-b.d);
+    const sortedDays=[...(mc.days||[])].sort((a,b)=>a.d-b.d);
     const dayBoxes=sortedDays.map(d=>microDayBoxHTML(d,DAYS_IT)).join("");
     const btnHTML=isActive
       ?'<button class="micro-activate-btn" style="background:#001A10;border:1.5px solid #00BFA5;color:#00BFA5;" onclick="deactivateProgram()">✅ Attivo — Disattiva</button>'
@@ -3537,11 +3547,11 @@ function openExtraDetail(id){
 
 function renderExtraDetail(){
   const w=getExtraById(state.extraDetailId);
-  if(!w)return renderExtra();
+  if(!w){state.tab="train";return renderTrain();}
   return `<div class="screen" style="overflow-y:auto;">
     <!-- Topbar -->
     <div class="topbar">
-      <button class="back-btn" onclick="switchTab('extra')">‹</button>
+      <button class="back-btn" onclick="switchTab('train')">‹</button>
       <div class="topbar-center">
         <div class="topbar-title">${w.label} — ${w.title}</div>
         <div class="topbar-step">${w.meta}</div>
@@ -5316,7 +5326,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v12';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v14';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
