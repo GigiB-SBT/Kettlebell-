@@ -327,6 +327,19 @@ a{color:var(--text);text-decoration:none;}
 // ── AUDIO ENGINE ───────────────────────────────────────────────────────────────
 let audioCtx=null,audioUnlocked=false;
 function getAudioCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+// ── TOAST NOTIFICATION ────────────────────────────────────────────────────────
+let _toastTimer=null;
+function showToast(msg, color="#F0F4F8", duration=2800){
+  let el=document.getElementById('sound-hint');
+  if(!el) return;
+  if(_toastTimer) clearTimeout(_toastTimer);
+  el.style.background=color==="ok"?"#00796B":color==="err"?"#B71C1C":"#1E2A35";
+  el.style.color="#F0F4F8";
+  el.textContent=msg;
+  el.classList.add('show');
+  _toastTimer=setTimeout(()=>{ el.classList.remove('show'); },duration);
+}
+
 function unlockAudio(){
   if(audioUnlocked)return;
   try{
@@ -414,6 +427,11 @@ const EXERCISES={
   "Goblet Squat Jump":     {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=goblet+squat+jump+kettlebell+tutorial",cue:"Squat profondo → spingi il suolo → atterra morbido"},
   "KB Snatch":             {reps:"5 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+snatch+tutorial+technique",cue:"Traiettoria verticale — KB vicina al corpo"},
   "KB Halo":               {reps:"5 giri/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+halo+exercise+tutorial",cue:"KB capovolta — cerchio stretto, spalle basse"},
+  // ── Bellplex exercises ───────────────────────────────────────────────────────
+  "Thruster":              {reps:"5 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+thruster+exercise+tutorial",cue:"Squat profondo → drive dall'anca → press sopra la testa — 1 movimento fluido"},
+  "KB High Pull":          {reps:"3-5 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+high+pull+tutorial+technique",cue:"Gomito alto verso il soffitto — KB vicina al corpo — zip up"},
+  "Overhead Lunge":        {reps:"3-5 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+overhead+lunge+tutorial",cue:"KB lockout sopra — braccio dritto — passo avanti — ginocchio sfiora il suolo"},
+  "KB Windmill":           {reps:"2-5 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+windmill+tutorial+technique",cue:"KB overhead — guarda la KB — ruota torso — tocca il piede opposto — torna su"},
   "KB Clean":              {reps:"8 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+clean+technique+tutorial",cue:"Rack pulito — gomito a corpo, zero oscillazione"},
   "Rest libero":           {reps:"Recupero",yt:null,cue:"Respira — qualità > velocità"},
   "KB Press":              {reps:"6–8 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+strict+press+tutorial",cue:"Strict press — no dip, spingi con la spalla"},
@@ -456,6 +474,223 @@ const DAYS={
   B:{label:"Giorno B",subtitle:"HIIT 40/20",focus:"Condizionamento Metabolico",color:"#FFC107",emoji:"🔥",seq:buildDayB(),totalMin:20},
   C:{label:"Giorno C",subtitle:"Ladder + AMRAP",focus:"Densità + Coordinazione",color:"#00BFA5",emoji:"🎯",seq:buildDayC(),totalMin:28},
 };
+
+// ── BW / RINGS EXERCISES ──────────────────────────────────────────────────────
+const BW_EXERCISES={
+  // Phase 1
+  "TMB Pull-up":       {reps:"3-8 rip",yt:"https://www.youtube.com/results?search_query=TMB+pull+up+technique+bodyweight",cue:"Thumb Below Bar — presa prona stretta · schiaccia scapole in basso · mento sopra la sbarra"},
+  "Squat 1.5":         {reps:"15 rip",yt:"https://www.youtube.com/results?search_query=1.5+rep+squat+bodyweight+technique",cue:"Scendi a fondo → risali a metà → riscendi → risali. 1 rep = 1.5 movimenti"},
+  "Jump Squat":        {reps:"5-8 rip",yt:"https://www.youtube.com/results?search_query=jump+squat+technique+explosive",cue:"Squat a 90° → esplosione verso l'alto → atterra morbido sulle punte"},
+  "Hanging Knee Raise":{reps:"8-10 rip",yt:"https://www.youtube.com/results?search_query=hanging+knee+raise+technique+abs",cue:"Appeso alla sbarra · solleva le ginocchia verso il petto · non oscillare"},
+  "Body Row":          {reps:"8-12 rip",yt:"https://www.youtube.com/results?search_query=bodyweight+row+technique+inverted+row",cue:"Corpo rigido come una tavola · tira il petto verso la sbarra · gomiti a 45°"},
+  "Close Grip Push-up":{reps:"10-20 rip",yt:"https://www.youtube.com/results?search_query=close+grip+push+up+technique+triceps",cue:"Mani strette sotto le spalle · gomiti vicini al corpo · petto tocca il suolo"},
+  "Plank Walkout":     {reps:"5-10 rip",yt:"https://www.youtube.com/results?search_query=plank+walkout+exercise+technique",cue:"Da in piedi · scendi con le mani · cammina in plank · torna su"},
+  "Chin-up":           {reps:"3-10 rip",yt:"https://www.youtube.com/results?search_query=chin+up+technique+supinated+grip",cue:"Presa supina · tira verso il mento · lockout completo in basso"},
+  "1.5 Push-up":       {reps:"8-15 rip",yt:"https://www.youtube.com/results?search_query=1.5+rep+push+up+technique",cue:"Scendi a fondo → risali a metà → riscendi → risali. Brucia i pettorali"},
+  "Bulgarian Split Squat":{reps:"10-15/gamba",yt:"https://www.youtube.com/results?search_query=bulgarian+split+squat+technique+form",cue:"Piede posteriore su supporto · scendi verticale · ginocchio anteriore non oltre la punta"},
+  "Side Plank":        {reps:"30-60\" per lato",yt:"https://www.youtube.com/results?search_query=side+plank+technique+form",cue:"Corpo allineato · anca sollevata · non cedere con i fianchi"},
+  "Leg Raise":         {reps:"8-10 rip",yt:"https://www.youtube.com/results?search_query=hanging+leg+raise+straight+leg+technique",cue:"Gambe dritte o leggermente piegate · solleva fino a parallelo · abbassa lento"},
+  "Split Jump":        {reps:"5-8/gamba",yt:"https://www.youtube.com/results?search_query=split+jump+lunge+jump+technique+explosive",cue:"Da affondo → salto esplosivo → inverti le gambe in aria → atterra morbido"},
+  // Phase 2
+  "Ring Pull-up":      {reps:"6-12 rip",yt:"https://www.youtube.com/results?search_query=gymnastic+ring+pull+up+technique+tutorial",cue:"Anelli instabili · ruota i polsi verso di te in alto · scapole in basso · pieno ROM"},
+  "Ring Dip":          {reps:"5-10 rip",yt:"https://www.youtube.com/results?search_query=gymnastic+ring+dip+technique+tutorial",cue:"Anelli stabili con polsi ruotati in fuori in alto · scendi lento · lockout completo"},
+  "Chin-up Knee Raise":{reps:"5-8 rip",yt:"https://www.youtube.com/results?search_query=chin+up+knee+raise+combination+exercise",cue:"Fai il chin-up e nella fase alta solleva le ginocchia verso il petto simultaneamente"},
+  "Judo Push-up":      {reps:"8-12 rip",yt:"https://www.youtube.com/results?search_query=judo+push+up+technique+dive+bomber",cue:"Da posizione V rovesciato · tuffati verso il suolo · arca verso l'alto · inverti"},
+  "Sliding Leg Curl":  {reps:"10-15 rip",yt:"https://www.youtube.com/results?search_query=sliding+leg+curl+hamstring+exercise+floor",cue:"Sdraiato · talloni su superficie scivolosa · solleva i fianchi · piega le ginocchia"},
+  "Face Pull":         {reps:"10-15 rip",yt:"https://www.youtube.com/results?search_query=face+pull+exercise+technique+band+rings",cue:"Con elastico o anelli · tira verso il viso · gomiti alti · rotatori esterni attivi"},
+  "Walking Lunge":     {reps:"10-12/gamba",yt:"https://www.youtube.com/results?search_query=walking+lunge+technique+form",cue:"Passo lungo · ginocchio posteriore sfiora il suolo · torso verticale · spingi in avanti"},
+  "Ring 1.5 Push-up":  {reps:"8-12 rip",yt:"https://www.youtube.com/results?search_query=ring+push+up+1.5+rep+technique",cue:"Su anelli · scendi a fondo → risali a metà → riscendi → risali. Instabilità massima"},
+  "Skater Squat":      {reps:"3-6/gamba",yt:"https://www.youtube.com/results?search_query=skater+squat+single+leg+technique+beginner",cue:"Squat monopodalico · gamba libera dietro · scendi controllato · ginocchio non tocca"},
+  "L-Sit Hold":        {reps:"Max tempo",yt:"https://www.youtube.com/results?search_query=l+sit+hold+technique+progression+tutorial",cue:"Su parallele/suolo/anelli · gambe parallele · spalle in basso · respira regolarmente"},
+  // Phase 3
+  "TMB Chin-up":       {reps:"5-10 rip",yt:"https://www.youtube.com/results?search_query=TMB+chin+up+technique+bodyweight+advanced",cue:"Thumb Below Bar presa supina · pausa 1\" in alto · scapole attive durante tutto il ROM"},
+  "Ring Fallout":      {reps:"5-10 rip",yt:"https://www.youtube.com/results?search_query=ring+fallout+ab+wheel+gymnastic+rings+tutorial",cue:"Da in piedi con anelli bassi · fai scivolare le braccia in avanti · corpo rigido · torna su"},
+  "1.5 Body Row":      {reps:"8-12 rip",yt:"https://www.youtube.com/results?search_query=bodyweight+row+1.5+rep+technique",cue:"Tira su a fondo → abbassa a metà → su a fondo ancora → abbassa completamente = 1 rep"},
+  // BW Circuits
+  "Dip":               {reps:"10-15 rip",yt:"https://www.youtube.com/results?search_query=dip+exercise+parallel+bars+technique",cue:"Corpo verticale · scendi fino a 90° · non dondolare · lockout in alto"},
+  "Pike Push-up":      {reps:"8-12 rip",yt:"https://www.youtube.com/results?search_query=pike+push+up+technique+shoulders",cue:"Fianchi alti · scendi con la testa verso il suolo · spingi le spalle"},
+  "Inverted Row":      {reps:"8-12 rip",yt:"https://www.youtube.com/results?search_query=inverted+row+technique+table+barbell",cue:"Corpo rigido · tira il petto verso la barra · gomiti a 45° · scendi lento"},
+  "Burpee":            {reps:"10 rip",yt:"https://www.youtube.com/results?search_query=burpee+perfect+form+tutorial",cue:"Plank → push-up → salto con mani in alto · ritmo costante"},
+  "Mountain Climber":  {reps:"20 rip",yt:"https://www.youtube.com/results?search_query=mountain+climber+exercise+tutorial+core",cue:"Plank alto · ginocchia alternate veloci · fianchi giù · core stabile"},
+};
+// Merge in EXERCISES
+Object.assign(EXERCISES, BW_EXERCISES);
+
+// ── BW / RINGS WORKOUT BUILDERS ───────────────────────────────────────────────
+const RINGS_DATA={
+  "1-1":{label:"BW Jacked P1-W1",subtitle:"Circuit · ~30 min",color:"#43A047",emoji:"🔩",totalMin:30,rounds:4,
+    restBetweenEx:30,restBetweenRounds:120,
+    exercises:[
+      {name:"TMB Pull-up",repsOverride:"3-8 rip"},
+      {name:"Push-up",repsOverride:"max rip"},
+      {name:"Squat 1.5",repsOverride:"15 rip"},
+      {name:"Jump Squat",repsOverride:"5-8 rip"},
+      {name:"Hanging Knee Raise",repsOverride:"8-10 rip"},
+    ]},
+  "1-2":{label:"BW Jacked P1-W2",subtitle:"Circuit · ~30 min",color:"#43A047",emoji:"🔩",totalMin:30,rounds:4,
+    restBetweenEx:30,restBetweenRounds:120,
+    exercises:[
+      {name:"Body Row",repsOverride:"8-12 rip"},
+      {name:"Close Grip Push-up",repsOverride:"10-20 rip"},
+      {name:"Reverse Lunge",repsOverride:"10-15 rip/gamba"},
+      {name:"Split Jump",repsOverride:"5-8 rip/gamba"},
+      {name:"Plank Walkout",repsOverride:"5-10 rip"},
+    ]},
+  "1-3":{label:"BW Jacked P1-W3",subtitle:"Circuit · ~30 min",color:"#43A047",emoji:"🔩",totalMin:30,rounds:4,
+    restBetweenEx:30,restBetweenRounds:120,
+    exercises:[
+      {name:"Chin-up",repsOverride:"3-10 rip"},
+      {name:"1.5 Push-up",repsOverride:"8-15 rip"},
+      {name:"Bulgarian Split Squat",repsOverride:"10-15 rip/gamba"},
+      {name:"Side Plank",repsOverride:"30-60\" per lato"},
+      {name:"Leg Raise",repsOverride:"8-10 rip"},
+    ]},
+  "2-1":{label:"BW Jacked P2-W1",subtitle:"Circuit anelli · ~35 min",color:"#43A047",emoji:"🔩",totalMin:35,rounds:4,
+    restBetweenEx:30,restBetweenRounds:120,
+    exercises:[
+      {name:"Ring Pull-up",repsOverride:"6-12 rip"},
+      {name:"Ring Dip",repsOverride:"5-10 rip"},
+      {name:"Bulgarian Split Squat",repsOverride:"10-15 rip/gamba"},
+      {name:"Body Row",repsOverride:"8-12 rip (rest-pause)"},
+      {name:"Push-up",repsOverride:"10-20 rip (rest-pause)"},
+      {name:"Hanging Knee Raise",repsOverride:"5-10 rip"},
+    ]},
+  "2-2":{label:"BW Jacked P2-W2",subtitle:"Circuit anelli · ~35 min",color:"#43A047",emoji:"🔩",totalMin:35,rounds:4,
+    restBetweenEx:30,restBetweenRounds:120,
+    exercises:[
+      {name:"Chin-up Knee Raise",repsOverride:"5-8 rip"},
+      {name:"Judo Push-up",repsOverride:"8-12 rip"},
+      {name:"Sliding Leg Curl",repsOverride:"10-15 rip"},
+      {name:"Leg Raise",repsOverride:"10-15 rip"},
+      {name:"Face Pull",repsOverride:"10-15 rip (rest-pause)"},
+      {name:"Walking Lunge",repsOverride:"10-12 rip/gamba"},
+    ]},
+  "2-3":{label:"BW Jacked P2-W3",subtitle:"Circuit anelli · ~35 min",color:"#43A047",emoji:"🔩",totalMin:35,rounds:4,
+    restBetweenEx:30,restBetweenRounds:120,
+    exercises:[
+      {name:"Body Row",repsOverride:"8-12 rip (iso countdown)"},
+      {name:"Ring 1.5 Push-up",repsOverride:"8-12 rip"},
+      {name:"Skater Squat",repsOverride:"3-6 rip/gamba"},
+      {name:"Reverse Lunge",repsOverride:"10-15 rip/gamba"},
+      {name:"L-Sit Hold",repsOverride:"max tempo"},
+      {name:"Plank Walkout",repsOverride:"8-12 rip"},
+    ]},
+  "3-1":{label:"BW Jacked P3-W1",subtitle:"Circuit avanzato · ~40 min",color:"#43A047",emoji:"🔩",totalMin:40,rounds:4,
+    restBetweenEx:30,restBetweenRounds:120,
+    exercises:[
+      {name:"Ring Pull-up",repsOverride:"5-10 rip (iso countdown)"},
+      {name:"Ring Dip",repsOverride:"5-10 rip"},
+      {name:"Skater Squat",repsOverride:"5-10 rip (rest-pause)"},
+      {name:"1.5 Body Row",repsOverride:"8-12 rip"},
+      {name:"L-Sit Hold",repsOverride:"max tempo"},
+      {name:"Side Plank",repsOverride:"60-90\" per lato"},
+    ]},
+  "3-2":{label:"BW Jacked P3-W2",subtitle:"Circuit avanzato · ~40 min",color:"#43A047",emoji:"🔩",totalMin:40,rounds:4,
+    restBetweenEx:30,restBetweenRounds:120,
+    exercises:[
+      {name:"TMB Chin-up",repsOverride:"5-10 rip"},
+      {name:"Close Grip Push-up",repsOverride:"8-12 rip (pausa 2\")"},
+      {name:"Sliding Leg Curl",repsOverride:"10-20 rip"},
+      {name:"Reverse Lunge",repsOverride:"10-15 rip/gamba"},
+      {name:"Face Pull",repsOverride:"10-15 rip"},
+      {name:"Leg Raise",repsOverride:"10-15 rip"},
+    ]},
+  "3-3":{label:"BW Jacked P3-W3",subtitle:"Circuit avanzato · ~40 min",color:"#43A047",emoji:"🔩",totalMin:40,rounds:4,
+    restBetweenEx:30,restBetweenRounds:120,
+    exercises:[
+      {name:"Ring Pull-up",repsOverride:"5-10 rip (pausa top 1\")"},
+      {name:"Ring Dip",repsOverride:"5-10 rip (pausa basso)"},
+      {name:"Skater Squat",repsOverride:"5-10 rip/gamba"},
+      {name:"Ring Fallout",repsOverride:"5-10 rip"},
+      {name:"Body Row",repsOverride:"max rip"},
+      {name:"L-Sit Hold",repsOverride:"max tempo"},
+    ]},
+};
+
+const BW_CIRCUITS={
+  push:{label:"BW Push Circuit",subtitle:"Circuit · ~20 min",color:"#00BCD4",emoji:"🤸",totalMin:20,rounds:4,
+    restBetweenEx:30,restBetweenRounds:90,
+    exercises:[
+      {name:"Push-up",repsOverride:"10-15 rip"},
+      {name:"Dip",repsOverride:"10-15 rip"},
+      {name:"Pike Push-up",repsOverride:"8-12 rip"},
+      {name:"Close Grip Push-up",repsOverride:"10-15 rip"},
+    ]},
+  pull:{label:"BW Pull Circuit",subtitle:"Circuit · ~20 min",color:"#00BCD4",emoji:"🤸",totalMin:20,rounds:4,
+    restBetweenEx:30,restBetweenRounds:90,
+    exercises:[
+      {name:"Chin-up",repsOverride:"max rip"},
+      {name:"Body Row",repsOverride:"8-12 rip"},
+      {name:"Face Pull",repsOverride:"10-15 rip"},
+      {name:"Inverted Row",repsOverride:"8-12 rip"},
+    ]},
+  legs:{label:"BW Legs + Core",subtitle:"Circuit · ~20 min",color:"#00BCD4",emoji:"🤸",totalMin:20,rounds:4,
+    restBetweenEx:30,restBetweenRounds:90,
+    exercises:[
+      {name:"Reverse Lunge",repsOverride:"12-15 rip/gamba"},
+      {name:"Squat 1.5",repsOverride:"12-15 rip"},
+      {name:"Side Plank",repsOverride:"30-45\" per lato"},
+      {name:"L-Sit Hold",repsOverride:"max tempo"},
+      {name:"Leg Raise",repsOverride:"10-12 rip"},
+    ]},
+  full:{label:"BW Full Body Circuit",subtitle:"Circuit · ~25 min",color:"#00BCD4",emoji:"🤸",totalMin:25,rounds:5,
+    restBetweenEx:30,restBetweenRounds:90,
+    exercises:[
+      {name:"Burpee",repsOverride:"10 rip"},
+      {name:"Push-up",repsOverride:"10-15 rip"},
+      {name:"Squat 1.5",repsOverride:"12 rip"},
+      {name:"Chin-up",repsOverride:"max rip"},
+      {name:"Mountain Climber",repsOverride:"20 rip"},
+    ]},
+};
+
+function buildCircuitSeq(data){
+  const seq=[];
+  const totalRounds=data.rounds;
+  for(let r=1;r<=totalRounds;r++){
+    data.exercises.forEach((ex,ei)=>{
+      seq.push({
+        name:ex.name,
+        repsOverride:ex.repsOverride||null,
+        round:r,totalRounds,
+        timerSec:null,   // rep-based, no timer obbligatorio
+        type:"work",
+      });
+      // rest tra esercizi (non dopo l'ultimo esercizio del round)
+      if(ei<data.exercises.length-1){
+        seq.push({name:"Rest",round:r,totalRounds,timerSec:data.restBetweenEx,type:"rest",
+          repsOverride:`Prossimo: ${data.exercises[ei+1].name}`});
+      }
+    });
+    // rest tra round (non dopo l'ultimo round)
+    if(r<totalRounds){
+      seq.push({name:"Recupero",round:r,totalRounds,timerSec:data.restBetweenRounds,type:"rest",
+        repsOverride:`Round ${r+1} di ${totalRounds} — Riposo 2 minuti`});
+    }
+  }
+  return seq;
+}
+
+function startRingsWorkout(ph,w){
+  const key=`${ph}-${w}`;
+  const data=RINGS_DATA[key];
+  if(!data)return;
+  data.seq=buildCircuitSeq(data);
+  DAYS["bw_jacked"]=data;
+  // Aggiorna anche la selezione nel piano
+  state.plan.ringsPhase=ph;
+  state.plan.ringsWorkout=w;
+  savePlan();
+  startWorkout("bw_jacked");
+}
+
+function startBwCircuit(id){
+  const data=BW_CIRCUITS[id];
+  if(!data)return;
+  data.seq=buildCircuitSeq(data);
+  DAYS["bw_circuit"]=data;
+  startWorkout("bw_circuit");
+}
 
 // ── AXE EXERCISES ─────────────────────────────────────────────────────────────
 const AXE_EX={
@@ -632,6 +867,16 @@ let state={
   healthHistory:JSON.parse(localStorage.getItem("kb-health-history")||"[]"),
   healthProfile:JSON.parse(localStorage.getItem("kb-health-profile")||JSON.stringify({height:175,age:40})),
   healthForm:{weight:"",hrv:"",sleep:"",sleepQ:null},
+  plan:{
+    subTab:"oggi",
+    ringsPhase:1,
+    ringsWorkout:1,
+    satFixed:false,
+    sunOptional:false,
+    axeOn:true,
+    activeDays:{mon:true,tue:false,wed:true,thu:true,fri:false},
+    openAcc:null,
+  },
 };
 let timerInterval=null;
 
@@ -671,9 +916,8 @@ function ringHTML(total,remaining,color,countdown=false){
 function navHTML(active){
   const tabs=[
     {id:"home",icon:"🏠",label:"HOME"},
-    {id:"axe",icon:"🪓",label:"AXE"},
-    {id:"extra",icon:"⚡",label:"EXTRA"},
-    {id:"programs",icon:"📋",label:"PROGRAMMI"},
+    {id:"train",icon:"💪",label:"TRAIN"},
+    {id:"plan",icon:"🔄",label:"PIANO"},
     {id:"health",icon:"❤️",label:"SALUTE"},
     {id:"log",icon:"📊",label:"STATS"},
   ];
@@ -682,109 +926,136 @@ function navHTML(active){
       <span class="ni">${t.icon}</span>${t.label}
     </button>`).join("")}</nav>`;
 }
-function switchTab(t){state.tab=t;render();}
+function switchTab(t){
+  // redirect vecchi tab nel nuovo
+  if(t==="axe"||t==="extra") t="train";
+  state.tab=t;render();
+}
 
 // ── SMART SUGGESTION ─────────────────────────────────────────────────────────
 function getSmartSuggestion(){
-  const hist=state.history; // sessioni KB + EXTRA
+  const hist=state.history;
   const axeHist=state.axeHistory;
   const last5=[...hist].slice(-5);
   const last3=[...hist].slice(-3);
   const lastSession=hist.length>0?hist[hist.length-1]:null;
   const lastAxe=axeHist.length>0?axeHist[axeHist.length-1]:null;
 
-  // ── 1. RECUPERO: se ultima sessione era pesante o HR alta ─────────────────
+  // Ultima sessione di qualsiasi tipo (KB, EXTRA, AXE)
+  const lastKBDate=lastSession?new Date(lastSession.date||0):null;
+  const lastAxeDate=lastAxe?new Date(lastAxe.date||0):null;
+  const lastAnyDate=lastKBDate&&lastAxeDate
+    ?(lastKBDate>lastAxeDate?lastKBDate:lastAxeDate)
+    :(lastKBDate||lastAxeDate||null);
+  const lastAnyIsAxe=lastAxeDate&&(!lastKBDate||lastAxeDate>=lastKBDate);
+
+  // ── 1. RECUPERO ──────────────────────────────────────────────────────────
   if(lastSession){
-    const hrAvg=lastSession.hrAvg;
-    const feeling=lastSession.feeling;
-    const isHeavy=feeling==="😫";
-    const isHighHR=hrAvg&&hrAvg>165;
+    const isHeavy=lastSession.feeling==="😫";
+    const isHighHR=lastSession.hrAvg&&lastSession.hrAvg>165;
     if(isHeavy||isHighHR){
       return {
-        type:"rest",
-        icon:"🌀",
-        color:"#00BFA5",
+        type:"rest",icon:"🌀",color:"#00BFA5",
         title:"Giorno di recupero",
-        reason: isHeavy
-          ? `L'ultimo allenamento (${lastSession.day}) era pesante — il tuo corpo chiede recupero.`
-          : `HR media alta nell'ultima sessione (${hrAvg} bpm) — lascia che il sistema si adatti.`,
-        action:null,
-        actionLabel:null,
-        tip:"Fai 10–15 min di mobilità leggera oppure una camminata. Niente KB oggi."
+        reason:isHeavy
+          ?`Ultima sessione (${lastSession.day}) era pesante — il corpo chiede recupero.`
+          :`HR media alta (${lastSession.hrAvg} bpm) — lascia che il sistema si adatti.`,
+        action:null,actionLabel:null,
+        tip:"Mobilità leggera o camminata. Niente KB oggi."
       };
     }
   }
 
-  // ── 2. EQUILIBRIO A/B/C: non ripetere lo stesso due volte di fila ─────────
-  const lastDay=lastSession?lastSession.day:null;
-  const lastLastDay=hist.length>1?hist[hist.length-2].day:null;
+  // ── 2. AXE — suggerisci solo se axeOn è attivo ───────────────────────────
+  const axeEnabled=state.plan?.axeOn!==false;
+  const axeSessionsThisWeek=axeHist.filter(h=>{
+    const d=new Date(h.date||0);
+    const now=new Date();
+    const weekAgo=new Date(now-7*24*60*60*1000);
+    return d>weekAgo;
+  }).length;
+  const lastSessionWasAXE=lastAnyIsAxe;
+  const needsAXE=axeSessionsThisWeek<2&&!lastSessionWasAXE;
 
-  // Conta quante volte A/B/C nelle ultime 6 sessioni
-  const abcCount={A:0,B:0,C:0};
-  [...hist].slice(-6).forEach(h=>{
-    if(h.day==="A"||h.day==="B"||h.day==="C") abcCount[h.day]++;
-  });
-
-  // Trova il giorno A/B/C meno fatto di recente
-  const abcOrder=["A","B","C"].filter(d=>d!==lastDay).sort((a,b)=>abcCount[a]-abcCount[b]);
-  const suggestedABC=abcOrder[0]||"A";
-  const suggestedDay=DAYS[suggestedABC];
-
-  // ── 3. VARIETÀ EXTRA: se non ne hai fatto uno nelle ultime 4 sessioni ─────
-  const recentExtra=last5.filter(h=>h.day&&h.day.startsWith("extra_"));
-  const noRecentExtra=recentExtra.length===0&&hist.length>=3;
-
-  // ── 4. PROGRESSIONE: se ultime 2 sessioni erano 💪 o 🔥 suggerisci +volume
-  const lastTwo=last3.slice(-2);
-  const allEasy=lastTwo.length>=2&&lastTwo.every(h=>h.feeling==="💪"||h.feeling==="🔥");
-
-  // ── Costruisci il messaggio finale ─────────────────────────────────────────
-
-  // Priorità EXTRA se non ne ha fatto uno di recente e non è in recupero
-  if(noRecentExtra){
-    // Suggerisci un EXTRA che non ha mai fatto o non ha fatto di recente
-    const recentExtraIds=last5.filter(h=>h.day&&h.day.startsWith("extra_")).map(h=>h.day.replace("extra_",""));
-    const candidate=EXTRA_WORKOUTS.find(w=>!recentExtraIds.includes(w.id))||EXTRA_WORKOUTS[0];
+  if(needsAXE&&hist.length>=1&&axeEnabled){
+    const axeP=state.axeProgress;
     return {
-      type:"extra",
-      icon:candidate.emoji,
-      color:candidate.color,
-      title:candidate.label+" — "+candidate.title,
-      reason:"Non fai un workout EXTRA da un po' — è il momento di variare.",
-      action:"openExtraDetail('"+candidate.id+"')",
-      actionLabel:"▶ Apri "+candidate.label,
+      type:"axe",icon:"🪓",color:"#9C27B0",
+      title:`AXE — ${axeP.currentSets} set × ${axeP.repsPerSet} rip`,
+      reason:`Questa settimana hai fatto ${axeSessionsThisWeek}/2 sessioni AXE — costruisce il motore aerobico.`,
+      action:"switchTab('train');setTimeout(()=>document.getElementById('train-axe-btn')?.click(),100)",
+      actionLabel:"▶ Start AXE",
+      tip:"AGT Pavel · talk test · no grinding · qualità sopra tutto"
+    };
+  }
+
+  // ── 3. BELLPLEX — suggerisci se non ne hai fatto uno nelle ultime 4 sessioni
+  const recentBP=last5.filter(h=>h.day&&h.day.startsWith("extra_BP"));
+  const noRecentBP=recentBP.length===0&&hist.length>=3&&!lastSessionWasAXE;
+  if(noRecentBP){
+    const recentIds=last5.filter(h=>h.day&&h.day.startsWith("extra_BP")).map(h=>h.day.replace("extra_",""));
+    const bpWorkouts=EXTRA_WORKOUTS.filter(w=>w.id.startsWith("BP"));
+    const candidate=bpWorkouts.find(w=>!recentIds.includes(w.id))||bpWorkouts[0];
+    return {
+      type:"bellplex",icon:candidate.emoji,color:"#E53935",
+      title:`Bellplex: ${candidate.label} — ${candidate.title}`,
+      reason:"Non fai un Bellplex complex da un po' — ottimo per forza e condizionamento.",
+      action:`openExtraDetail('${candidate.id}')`,
+      actionLabel:`▶ Start ${candidate.label}`,
       tip:candidate.meta
     };
   }
 
-  // Progressione volume
-  if(allEasy&&lastDay){
-    const nextDay=suggestedABC;
-    const nday=DAYS[nextDay];
+  // ── 4. EXTRA generico (non-BP) se non ne ha fatto uno di recente ─────────
+  const recentExtra=last5.filter(h=>h.day&&h.day.startsWith("extra_")&&!h.day.startsWith("extra_BP"));
+  const noRecentExtra=recentExtra.length===0&&hist.length>=3&&!lastSessionWasAXE;
+  if(noRecentExtra){
+    const recentIds=last5.filter(h=>h.day&&h.day.startsWith("extra_")).map(h=>h.day.replace("extra_",""));
+    const nonBP=EXTRA_WORKOUTS.filter(w=>!w.id.startsWith("BP"));
+    const candidate=nonBP.find(w=>!recentIds.includes(w.id))||nonBP[0];
     return {
-      type:"abc",
-      icon:nday.emoji,
-      color:nday.color,
-      title:nday.label+" — "+nday.subtitle,
-      reason:"Ultime 2 sessioni andate bene 💪 — sei pronto per alzare il ritmo. Vai al massimo oggi.",
-      action:"startWorkout('"+nextDay+"')",
-      actionLabel:"▶ Start "+nday.label+" (max effort)",
+      type:"extra",icon:candidate.emoji,color:candidate.color,
+      title:`${candidate.label} — ${candidate.title}`,
+      reason:"Varietà — prova un workout EXTRA che non fai da un po'.",
+      action:`openExtraDetail('${candidate.id}')`,
+      actionLabel:`▶ Apri ${candidate.label}`,
+      tip:candidate.meta
+    };
+  }
+
+  // ── 5. EQUILIBRIO A/B/C ──────────────────────────────────────────────────
+  const lastDay=lastSession?lastSession.day:null;
+  const abcCount={A:0,B:0,C:0};
+  [...hist].slice(-6).forEach(h=>{
+    if(["A","B","C"].includes(h.day)) abcCount[h.day]++;
+  });
+  const abcOrder=["A","B","C"].filter(d=>d!==lastDay).sort((a,b)=>abcCount[a]-abcCount[b]);
+  const suggestedABC=abcOrder[0]||"A";
+  const suggestedDay=DAYS[suggestedABC];
+
+  // Progressione volume
+  const lastTwo=last3.slice(-2);
+  const allEasy=lastTwo.length>=2&&lastTwo.every(h=>h.feeling==="💪"||h.feeling==="🔥");
+  if(allEasy&&lastDay){
+    return {
+      type:"abc",icon:suggestedDay.emoji,color:suggestedDay.color,
+      title:`${suggestedDay.label} — ${suggestedDay.subtitle}`,
+      reason:"Ultime 2 sessioni andate bene 💪 — sei pronto per alzare il ritmo.",
+      action:`startWorkout('${suggestedABC}')`,
+      actionLabel:`▶ Start ${suggestedDay.label} (max effort)`,
       tip:"Obiettivo: mantieni la tecnica anche negli ultimi round."
     };
   }
 
-  // Equilibrio A/B/C standard
   return {
-    type:"abc",
-    icon:suggestedDay.emoji,
-    color:suggestedDay.color,
-    title:suggestedDay.label+" — "+suggestedDay.subtitle,
-    reason: lastDay
-      ? `Ultimo allenamento: Giorno ${lastDay}. Tocca a ${suggestedABC} per mantenere l'equilibrio.`
-      : "Inizia con il Giorno A — il punto di partenza del programma.",
-    action:"startWorkout('"+suggestedABC+"')",
-    actionLabel:"▶ Start "+suggestedDay.label,
-    tip:suggestedDay.focus+" · ~"+suggestedDay.totalMin+" min"
+    type:"abc",icon:suggestedDay.emoji,color:suggestedDay.color,
+    title:`${suggestedDay.label} — ${suggestedDay.subtitle}`,
+    reason:lastDay
+      ?`Ultimo: Giorno ${lastDay}. Tocca a ${suggestedABC} per l'equilibrio.`
+      :"Inizia con il Giorno A — il punto di partenza.",
+    action:`startWorkout('${suggestedABC}')`,
+    actionLabel:`▶ Start ${suggestedDay.label}`,
+    tip:`${suggestedDay.focus} · ~${suggestedDay.totalMin} min`
   };
 }
 
@@ -2576,6 +2847,509 @@ const EXTRA_WORKOUTS=[
   },
 
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // BELLPLEX COMPLEXES — 20 KB Complexes (single arm salvo indicazione)
+  // Fonte: Bellplex Training Systems · rest 60-90" tra serie · 5 serie
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // ── BP1: PD Special ──────────────────────────────────────────────────────
+  {
+    id:"BP1",label:"PD Special",emoji:"⭐",color:"#E53935",
+    title:"PD Special",
+    meta:"Bellplex · ~20 min · 5 serie · KB singola",
+    totalMin:20,
+    how:"Complex single arm Bellplex. 5 Rows + 5 Swings + 5 Thrusters su un lato, poi cambia. 5 serie totali con 60-90\" di recupero tra serie. Nessuna pausa tra gli esercizi all'interno della serie.",
+    structure:[["Serie","5"],["Schema","5 Row + 5 Swing + 5 Thruster"],["Lato","SX poi DX = 1 serie"],["Rest tra serie","60-90\""]],
+    exercises:[
+      {n:"1",name:"KB Row",detail:"5 rip — tira verso l'anca, schiena piatta",t:"reps",c:"#E53935"},
+      {n:"2",name:"One Arm Swing",detail:"5 rip — anca esplosiva, no pausa",t:"reps",c:"#E53935"},
+      {n:"3",name:"Thruster",detail:"5 rip — squat + press in un movimento",t:"reps",c:"#E53935"},
+    ],
+    tips:["Nessuna pausa tra i 3 esercizi — è un complex. La KB non tocca terra fino alla fine della serie su quel lato.","Thruster = Goblet Squat + Press in un movimento fluido — no stop in rack.","Rest 60\" se sei in forma, 90\" se necessario. Non meno di 60\"."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["KB Row","5 rip SX","Tira verso l'anca — schiena piatta"],["One Arm Swing","5 rip SX","Anca esplosiva — spalla packed"],["Thruster","5 rip SX → poi DX intero","Squat profondo → press esplosivo — 1 movimento"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira — serie "+(r+1)+"/5 in arrivo"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP2: Zeus ─────────────────────────────────────────────────────────────
+  {
+    id:"BP2",label:"Zeus",emoji:"⚡",color:"#1E88E5",
+    title:"Zeus",
+    meta:"Bellplex · ~20 min · 5 serie · KB singola",
+    totalMin:20,
+    how:"6 Rows + 5 Cleans + 4 Single Arm Front Squats. Complesso singolo braccio — fluidità tra Row, Clean e Front Squat. 5 serie, 60-90\" rest.",
+    structure:[["Serie","5"],["Schema","6 Row + 5 Clean + 4 Front Squat"],["Lato","SX poi DX"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"KB Row",detail:"6 rip — gomito alto, pausa in alto",t:"reps",c:"#1E88E5"},
+      {n:"2",name:"KB Clean",detail:"5 rip — rack pulito, gomito a corpo",t:"reps",c:"#1E88E5"},
+      {n:"3",name:"Front Squat",detail:"4 rip — da rack, squat profondo",t:"reps",c:"#1E88E5"},
+    ],
+    tips:["Il Clean porta la KB in rack — poi squat direttamente da rack. Nessun abbassamento tra Clean e Squat.","Row con pausa di 1\" in alto per attivare meglio i dorsali."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["KB Row","6 rip / lato","Gomito alto — pausa 1\" in alto"],["KB Clean","5 rip / lato","Rack pulito — gomito a corpo — no oscillazione"],["Front Squat","4 rip da rack / lato","Da rack — squat profondo — ginocchia fuori"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP3: Hercules ─────────────────────────────────────────────────────────
+  {
+    id:"BP3",label:"Hercules",emoji:"💪",color:"#8E24AA",
+    title:"Hercules",
+    meta:"Bellplex · ~18 min · 5 serie · KB singola",
+    totalMin:18,
+    how:"3 Swings + 3 Cleans + 3 Push Press. Complesso corto e potente — ideale per iniziare con i complexes o come finisher. 5 serie.",
+    structure:[["Serie","5"],["Schema","3 Swing + 3 Clean + 3 Push Press"],["Lato","SX poi DX"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"One Arm Swing",detail:"3 rip — esplosivo, tensione al top",t:"reps",c:"#8E24AA"},
+      {n:"2",name:"KB Clean",detail:"3 rip — dal backswing direttamente in rack",t:"reps",c:"#8E24AA"},
+      {n:"3",name:"Push Press",detail:"3 rip — dip & drive, lockout completo",t:"reps",c:"#8E24AA"},
+    ],
+    tips:["Schema corto: 3+3+3. La brevità permette intensità massima — non risparmiare sullo swing.","Dal Clean l'ultimo rep può diventare Push Press — flusso diretto."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["One Arm Swing","3 rip / lato","Esplosivo — tensione totale al top"],["KB Clean","3 rip / lato","Dal backswing in rack — gomito a corpo"],["Push Press","3 rip / lato","Dip & drive — lockout completo sopra la testa"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP4: Poseidon ─────────────────────────────────────────────────────────
+  {
+    id:"BP4",label:"Poseidon",emoji:"🔱",color:"#00ACC1",
+    title:"Poseidon",
+    meta:"Bellplex · ~20 min · 5 serie · KB singola",
+    totalMin:20,
+    how:"4 Swings + 3 High Pulls + 2 Snatches. Progressione di difficoltà dentro la serie — dal balistico base allo Snatch. 5 serie.",
+    structure:[["Serie","5"],["Schema","4 Swing + 3 High Pull + 2 Snatch"],["Lato","SX poi DX"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"One Arm Swing",detail:"4 rip — base balistica",t:"reps",c:"#00ACC1"},
+      {n:"2",name:"KB High Pull",detail:"3 rip — gomito alto, KB vicina al corpo",t:"reps",c:"#00ACC1"},
+      {n:"3",name:"KB Snatch",detail:"2 rip — traiettoria verticale, corkscrew",t:"reps",c:"#00ACC1"},
+    ],
+    tips:["La progressione Swing → High Pull → Snatch è intenzionale — ogni esercizio prepara il successivo. Non saltare il High Pull.","High Pull: tira il gomito alto come se stessi aprendo una zip — KB vicina al corpo."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["One Arm Swing","4 rip / lato","Anca esplosiva — spalla packed"],["KB High Pull","3 rip / lato","Gomito alto — KB vicina al corpo — zip up"],["KB Snatch","2 rip / lato","Traiettoria verticale — corkscrew al top — lockout"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP5: Achilles ─────────────────────────────────────────────────────────
+  {
+    id:"BP5",label:"Achilles",emoji:"🏹",color:"#F4511E",
+    title:"Achilles",
+    meta:"Bellplex · ~18 min · 5 serie · KB singola",
+    totalMin:18,
+    how:"3 Swings + 3 Snatches + 3 Overhead Lunges. Snatch porta la KB overhead → mantienila su per i Lunges. Esige mobilità di spalla e stabilità overhead. 5 serie.",
+    structure:[["Serie","5"],["Schema","3 Swing + 3 Snatch + 3 Overhead Lunge"],["Lato","SX poi DX"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"One Arm Swing",detail:"3 rip — preparazione balistica",t:"reps",c:"#F4511E"},
+      {n:"2",name:"KB Snatch",detail:"3 rip — l'ultimo finisce overhead",t:"reps",c:"#F4511E"},
+      {n:"3",name:"Overhead Lunge",detail:"3 rip — KB lockout sopra — passo avanti",t:"reps",c:"#F4511E"},
+    ],
+    tips:["Dopo il 3° Snatch la KB rimane overhead — parti subito con i Lunges. Non abbassarla.","Overhead Lunge: braccio dritto, bicipite vicino all'orecchio, guarda avanti non in su."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["One Arm Swing","3 rip / lato","Esplosivo — base per il Snatch"],["KB Snatch","3 rip / lato — ultimo overhead","Traiettoria verticale — l'ultimo resta locked out"],["Overhead Lunge","3 rip / lato — KB overhead","Braccio dritto — passo avanti — ginocchio sfiora il suolo"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP6: Sisyphus (2 mani) ────────────────────────────────────────────────
+  {
+    id:"BP6",label:"Sisyphus",emoji:"🪨",color:"#6D4C41",
+    title:"Sisyphus",
+    meta:"Bellplex · ~20 min · 5 serie · 2 mani sulla KB",
+    totalMin:20,
+    how:"5 Two Hand Squat Cleans + 4 Goblet Squats + 3/gamba Lunges. Tutto bimanuale — la KB non cambia mano. Squat Clean porta direttamente in posizione Goblet. 5 serie.",
+    structure:[["Serie","5"],["Schema","5 Two Hand Squat Clean + 4 Goblet Squat + 3/gamba Lunge"],["Stile","Bimanuale"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"Goblet Squat",detail:"Two Hand Squat Clean × 5 → poi Goblet × 4",t:"reps",c:"#6D4C41"},
+      {n:"2",name:"Reverse Lunge",detail:"3 rip/gamba — KB a Goblet position",t:"reps",c:"#6D4C41"},
+    ],
+    tips:["Two Hand Squat Clean: prendi la KB per le horns, porta in posizione goblet in un movimento — è un clean bimanuale.","Rimani in posizione goblet per i Squat successivi — non rimettere giù la KB."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        seq.push({name:"Goblet Squat",round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:"5 Two-Hand Squat Clean + 4 Goblet Squat",cueOverride:"Squat Clean bimanuale → rack goblet → 4 squat profondi"});
+        seq.push({name:"Reverse Lunge",round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:"3 rip/gamba — KB a Goblet",cueOverride:"KB ferma a goblet — lunge alternato — torso verticale"});
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP7: Gimli (2 mani) ───────────────────────────────────────────────────
+  {
+    id:"BP7",label:"Gimli",emoji:"🪓",color:"#795548",
+    title:"Gimli",
+    meta:"Bellplex · ~18 min · 5 serie · 2 mani sulla KB",
+    totalMin:18,
+    how:"5 Swings + 4 Deadlift High Pulls + 3 Goblet Squats. Bimanuale. Progressione dalla potenza (Swing) alla trazione (DHP) alla forza in squat (Goblet). 5 serie.",
+    structure:[["Serie","5"],["Schema","5 Swing + 4 Deadlift High Pull + 3 Goblet Squat"],["Stile","Bimanuale"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"KB Swing Bimanuale",detail:"5 rip — potenza dall'anca",t:"reps",c:"#795548"},
+      {n:"2",name:"Sumo Deadlift",detail:"4 Deadlift High Pull — tira gomiti alti",t:"reps",c:"#795548"},
+      {n:"3",name:"Goblet Squat",detail:"3 rip profondi — pausa 1\" in basso",t:"reps",c:"#795548"},
+    ],
+    tips:["Deadlift High Pull: dal suolo tira la KB verso il mento con gomiti alti — è DL + High Pull in un movimento.","Goblet Squat finale: pausa 1\" in basso per massimizzare il lavoro."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["KB Swing Bimanuale","5 rip bimanuale","Anca esplosiva — schiena neutra — proietta"],["Sumo Deadlift","4 Deadlift High Pull — bimanuale","Dal suolo tira gomiti alti verso il mento — zip up"],["Goblet Squat","3 rip profondi — pausa 1\" in basso","KB alle clavicole — squat profondo — pausa — spingi"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP8: Aragorn ──────────────────────────────────────────────────────────
+  {
+    id:"BP8",label:"Aragorn",emoji:"⚔️",color:"#37474F",
+    title:"Aragorn",
+    meta:"Bellplex · ~20 min · 5 serie · KB singola",
+    totalMin:20,
+    how:"6 Rows + 5 Cleans + 4 Push Press. Simile a Zeus ma con Push Press invece di Front Squat. Enfasi su trazione e spinta verticale. 5 serie.",
+    structure:[["Serie","5"],["Schema","6 Row + 5 Clean + 4 Push Press"],["Lato","SX poi DX"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"KB Row",detail:"6 rip — gomito alto, core attivo",t:"reps",c:"#37474F"},
+      {n:"2",name:"KB Clean",detail:"5 rip — rack pulito",t:"reps",c:"#37474F"},
+      {n:"3",name:"Push Press",detail:"4 rip — dip & drive, lockout",t:"reps",c:"#37474F"},
+    ],
+    tips:["Aragorn enfatizza la catena tirare-spingere: Row (tira orizzontale) → Clean (tira verticale) → Push Press (spingi verticale).","Dal ultimo Clean vai diretto in Push Press — non abbassare la KB tra Clean e Press."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["KB Row","6 rip / lato","Gomito alto — tira verso l'anca — core rigido"],["KB Clean","5 rip / lato","Rack pulito — gomito a corpo — no oscillazione"],["Push Press","4 rip / lato","Dip & drive — lockout completo — abbassa lento"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP9: Legolas ──────────────────────────────────────────────────────────
+  {
+    id:"BP9",label:"Legolas",emoji:"🏹",color:"#2E7D32",
+    title:"Legolas",
+    meta:"Bellplex · ~20 min · 5 serie · KB singola",
+    totalMin:20,
+    how:"4 Ballistic Rows + 4 Tactical Cleans + 4 Tactical Snatches. Versione tattica/balistica — ogni movimento ha una qualità specifica. 5 serie.",
+    structure:[["Serie","5"],["Schema","4 Ballistic Row + 4 Tactical Clean + 4 Tactical Snatch"],["Lato","SX poi DX"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"KB Row",detail:"4 Ballistic Row — esplosivo verso l'alto",t:"reps",c:"#2E7D32"},
+      {n:"2",name:"KB Clean",detail:"4 Tactical Clean — controllo totale in rack",t:"reps",c:"#2E7D32"},
+      {n:"3",name:"KB Snatch",detail:"4 Tactical Snatch — lockout preciso",t:"reps",c:"#2E7D32"},
+    ],
+    tips:["Ballistic Row: tira la KB esplosivamente e lasciala rimbalzare leggermente prima di riabbassarla — non trattenerla.","Tactical = massimo controllo, zero swing indesiderato. Precision over speed."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["KB Row","4 Ballistic Row / lato","Esplosivo verso l'alto — rimbalzo controllato in basso"],["KB Clean","4 Tactical Clean / lato","Rack preciso — zero oscillazione — gomito chiuso"],["KB Snatch","4 Tactical Snatch / lato","Traiettoria verticale — lockout preciso — abbassa lento"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP10: Elrond ─────────────────────────────────────────────────────────
+  {
+    id:"BP10",label:"Elrond",emoji:"🌟",color:"#F9A825",
+    title:"Elrond",
+    meta:"Bellplex · ~18 min · 5 serie · KB singola",
+    totalMin:18,
+    how:"5 Single Arm Deadlifts + 4 Cleans + 3 Push Press. Parte da terra — DL insegna l'hinge pulito prima del Clean. 5 serie.",
+    structure:[["Serie","5"],["Schema","5 SA Deadlift + 4 Clean + 3 Push Press"],["Lato","SX poi DX"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"KB Deadlift",detail:"5 SA Deadlift — hinge pulito da terra",t:"reps",c:"#F9A825"},
+      {n:"2",name:"KB Clean",detail:"4 rip — da terra in rack",t:"reps",c:"#F9A825"},
+      {n:"3",name:"Push Press",detail:"3 rip — dip & drive",t:"reps",c:"#F9A825"},
+    ],
+    tips:["Il DL insegna l'hinge — usa quella sensazione per il Clean successivo. Stesso pattern, più velocità.","SA Deadlift: KB tra i piedi leggermente laterale alla gamba — hinge sull'anca, non squat."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["KB Deadlift","5 SA Deadlift / lato","Hinge pulito — schiena neutra — spingi il pavimento"],["KB Clean","4 rip / lato","Dal backswing in rack — gomito a corpo"],["Push Press","3 rip / lato","Dip & drive — lockout completo"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP11: Gandalf ─────────────────────────────────────────────────────────
+  {
+    id:"BP11",label:"Gandalf",emoji:"🧙",color:"#9E9E9E",
+    title:"Gandalf",
+    meta:"Bellplex · ~20 min · 5 serie · KB singola",
+    totalMin:20,
+    how:"Swing + Tactical Clean & Thruster + Tactical Snatch + Windmill × 2 rip. Il complex più tecnico — include il Windmill che richiede mobilità di spalla e anca. 5 serie.",
+    structure:[["Serie","5"],["Schema","1 Swing + 1 Clean&Thruster + 1 Snatch + 2 Windmill"],["Lato","SX poi DX"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"One Arm Swing",detail:"1 rip — base esplosiva",t:"reps",c:"#9E9E9E"},
+      {n:"2",name:"Clean + Press",detail:"1 Clean & Thruster — fluido",t:"reps",c:"#9E9E9E"},
+      {n:"3",name:"KB Snatch",detail:"1 Tactical Snatch — controllo",t:"reps",c:"#9E9E9E"},
+      {n:"4",name:"KB Windmill",detail:"2 rip — KB overhead, ruota sul fianco",t:"reps",c:"#9E9E9E"},
+    ],
+    tips:["Windmill: KB overhead con braccio dritto → ruota il torso → tocca il piede opposto → torna su. Guarda sempre la KB.","Gandalf è il complex più tecnico — non per principianti. Padroneggia prima Hercules e Poseidon."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["One Arm Swing","1 rip / lato","Esplosivo — tensione al top"],["Clean + Press","1 Clean & Thruster / lato","Clean in rack → squat → press in un movimento"],["KB Snatch","1 Tactical Snatch / lato","Traiettoria verticale — lockout preciso"],["KB Halo","2 Windmill / lato — KB overhead","Braccio dritto — ruota torso — tocca piede — guarda la KB"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP12: Leonidas ────────────────────────────────────────────────────────
+  {
+    id:"BP12",label:"Leonidas",emoji:"🛡️",color:"#C62828",
+    title:"Leonidas",
+    meta:"Bellplex · ~18 min · 5 serie · KB singola",
+    totalMin:18,
+    how:"4 Cleans + 3 Push Press + 2 Thrusters. Scala dal volume (4) alla potenza (2). Il Thruster è il punto culminante di ogni serie — 2 rep massimo intensità. 5 serie.",
+    structure:[["Serie","5"],["Schema","4 Clean + 3 Push Press + 2 Thruster"],["Lato","SX poi DX"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"KB Clean",detail:"4 rip — rack pulito ogni rep",t:"reps",c:"#C62828"},
+      {n:"2",name:"Push Press",detail:"3 rip — dip & drive",t:"reps",c:"#C62828"},
+      {n:"3",name:"Thruster",detail:"2 rip — squat + press esplosivo",t:"reps",c:"#C62828"},
+    ],
+    tips:["La piramide inversa di rep (4-3-2) aumenta l'intensità man mano — il Thruster finale deve essere massimo sforzo.","Thruster: dal rack → squat profondo → risali con drive dall'anca → press sopra la testa. 1 movimento continuo."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["KB Clean","4 rip / lato","Rack pulito ogni rep — gomito a corpo"],["Push Press","3 rip / lato","Dip & drive — lockout — abbassa lento"],["Thruster","2 rip / lato — massima intensità","Squat profondo → drive → press — 1 movimento continuo"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP13: Codi Special ────────────────────────────────────────────────────
+  {
+    id:"BP13",label:"Codi Special",emoji:"🔥",color:"#FF6F00",
+    title:"Codi Special",
+    meta:"Bellplex · ~18 min · 5 serie · KB singola",
+    totalMin:18,
+    how:"4 Rows + 3 Swings + 2 Snatches. Piramide discendente di rep — ogni esercizio è più difficile del precedente con meno rip. 5 serie.",
+    structure:[["Serie","5"],["Schema","4 Row + 3 Swing + 2 Snatch"],["Lato","SX poi DX"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"KB Row",detail:"4 rip — potenza orizzontale",t:"reps",c:"#FF6F00"},
+      {n:"2",name:"One Arm Swing",detail:"3 rip — potenza verticale",t:"reps",c:"#FF6F00"},
+      {n:"3",name:"KB Snatch",detail:"2 rip — massima espressione",t:"reps",c:"#FF6F00"},
+    ],
+    tips:["4-3-2: la densità aumenta, le rep calano. Ogni esercizio è più esplosivo del precedente.","2 Snatches finali: dai tutto — sono solo 2, ma devono essere perfetti."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["KB Row","4 rip / lato","Tira verso l'anca — gomito alto — schiena piatta"],["One Arm Swing","3 rip / lato","Anca esplosiva — spalla packed — tensione al top"],["KB Snatch","2 rip / lato — dai tutto","Traiettoria verticale — corkscrew — lockout completo"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP14: Starky Boy ──────────────────────────────────────────────────────
+  {
+    id:"BP14",label:"Starky Boy",emoji:"🌠",color:"#0277BD",
+    title:"Starky Boy",
+    meta:"Bellplex · ~18 min · 5 serie · KB singola · × 5 rip",
+    totalMin:18,
+    how:"Row + Dead Clean + Swing Clean & Thruster × 5 rip. Tutto × 5 rip per ogni movimento. Il Dead Clean parte da terra ogni rep — no backswing. 5 serie.",
+    structure:[["Serie","5"],["Schema","(Row + Dead Clean + Swing Clean & Thruster) × 5 rip"],["Lato","SX poi DX"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"KB Row",detail:"5 rip — tira forte",t:"reps",c:"#0277BD"},
+      {n:"2",name:"KB Clean",detail:"5 Dead Clean — da terra ogni rep",t:"reps",c:"#0277BD"},
+      {n:"3",name:"Clean + Press",detail:"5 Swing Clean & Thruster",t:"reps",c:"#0277BD"},
+    ],
+    tips:["Dead Clean: la KB parte da terra ogni rep senza backswing — hinge → clean. Più lento ma più forza dal basso.","Swing Clean & Thruster: dal backswing → clean → thruster tutto in sequenza. Ritmo fluido."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["KB Row","5 rip / lato","Tira forte verso l'anca — gomito alto"],["KB Clean","5 Dead Clean / lato — da terra ogni rep","Da terra ogni rep senza backswing — hinge pulito → rack"],["Clean + Press","5 Swing Clean & Thruster / lato","Swing → Clean → Thruster fluido — 1 movimento"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP15: Big Mick ────────────────────────────────────────────────────────
+  {
+    id:"BP15",label:"Big Mick",emoji:"💥",color:"#558B2F",
+    title:"Big Mick",
+    meta:"Bellplex · ~20 min · 5 serie · KB singola",
+    totalMin:20,
+    how:"3 Rows + 4 Swings + 5 Snatches. Piramide crescente — parte da 3, arriva a 5 Snatches. L'intensità cresce dentro la serie. 5 serie.",
+    structure:[["Serie","5"],["Schema","3 Row + 4 Swing + 5 Snatch"],["Lato","SX poi DX"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"KB Row",detail:"3 rip — riscaldamento trazione",t:"reps",c:"#558B2F"},
+      {n:"2",name:"One Arm Swing",detail:"4 rip — costruisce il momentum",t:"reps",c:"#558B2F"},
+      {n:"3",name:"KB Snatch",detail:"5 rip — picco della serie",t:"reps",c:"#558B2F"},
+    ],
+    tips:["3-4-5: la piramide cresce. Il Snatch è il picco — 5 rip richiede resistenza balistica.","5 Snatches di fila: gestisci il respiro — inspira in basso, espira al lockout."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["KB Row","3 rip / lato","Tira verso l'anca — controllo"],["One Arm Swing","4 rip / lato","Costruisce momentum — anca esplosiva"],["KB Snatch","5 rip / lato — picco della serie","Traiettoria verticale — respira al lockout — corkscrew"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP16: King Kong (double bell) ─────────────────────────────────────────
+  {
+    id:"BP16",label:"King Kong",emoji:"🦍",color:"#4A148C",
+    title:"King Kong",
+    meta:"Bellplex · ~20 min · 5 serie · DOPPIA KB",
+    totalMin:20,
+    how:"Gorilla Row + Gorilla Row + Squat Clean & Thruster × 5 rip. Con due kettlebell. Gorilla Row = Row alternato con la KB a terra (come un gorilla). 5 serie.",
+    structure:[["Serie","5"],["Schema","(Gorilla Row + Gorilla Row + Squat Clean & Thruster) × 5"],["Stile","DOPPIA KB"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"KB Row",detail:"Gorilla Row SX + DX alternato × 5",t:"reps",c:"#4A148C"},
+      {n:"2",name:"Clean + Press",detail:"5 Double Squat Clean & Thruster",t:"reps",c:"#4A148C"},
+    ],
+    tips:["Gorilla Row: entrambe le KB a terra — tira una mentre l'altra rimane a terra — alterna. Simile a Renegade Row ma no push-up.","Double Squat Clean & Thruster: clean entrambe in rack → squat → thruster esplosivo. Le due KB si muovono insieme."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["KB Row","5× Gorilla Row SX + DX — DOPPIA KB","Entrambe KB a terra — tira alternato — no push-up"],["Clean + Press","5× Double Squat Clean & Thruster","Clean doppio in rack → squat → thruster esplosivo"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP17: Devil's Tricycle (2 mani) ───────────────────────────────────────
+  {
+    id:"BP17",label:"Devil's Tricycle",emoji:"😈",color:"#B71C1C",
+    title:"Devil's Tricycle",
+    meta:"Bellplex · ~20 min · 5 serie · 2 mani sulla KB",
+    totalMin:20,
+    how:"6 Swings + 6 Deadlift High Pull + 3/gamba Offset Squat Cleans. Bimanuale. Offset Squat Clean = KB su un lato solo durante lo squat. 5 serie.",
+    structure:[["Serie","5"],["Schema","6 Swing + 6 DHP + 3/gamba Offset Squat Clean"],["Stile","Bimanuale"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"KB Swing Bimanuale",detail:"6 rip — potenza pura",t:"reps",c:"#B71C1C"},
+      {n:"2",name:"Sumo Deadlift",detail:"6 Deadlift High Pull — bimanuale",t:"reps",c:"#B71C1C"},
+      {n:"3",name:"Goblet Squat",detail:"3/gamba Offset Squat Clean",t:"reps",c:"#B71C1C"},
+    ],
+    tips:["Offset Squat Clean: clean la KB su un lato (es. SX) → squat con KB a sinistra → scendi, cambia lato → DX. 3 rip/lato.","DHP bimanuale: tira entrambe le mani verso il mento — gomiti alti — KB vicina al corpo."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["KB Swing Bimanuale","6 rip bimanuale — potenza","Anca esplosiva — schiena neutra — proietta in avanti"],["Sumo Deadlift","6 Deadlift High Pull bimanuale","Dal suolo — gomiti alti — KB verso il mento"],["Goblet Squat","3 Offset Squat Clean / lato","Clean SX → squat → scendi → clean DX → squat"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP18: DeGiuli ─────────────────────────────────────────────────────────
+  {
+    id:"BP18",label:"DeGiuli",emoji:"💀",color:"#263238",
+    title:"DeGiuli",
+    meta:"Bellplex · ~18 min · 5 serie · KB singola · × 6 rip",
+    totalMin:18,
+    how:"SA Deadlift + SA Deadlift + Deadstop Swing × 6 rip. Tutto con dead stop tra i rep — nessun bounce o elasticità. Costruisce forza dal basso. 5 serie.",
+    structure:[["Serie","5"],["Schema","(SA DL + SA DL + Deadstop Swing) × 6 rip"],["Lato","SX poi DX"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"KB Deadlift",detail:"SA DL + SA DL — entrambi dead stop",t:"reps",c:"#263238"},
+      {n:"2",name:"One Arm Swing",detail:"Deadstop Swing × 6 — da terra ogni rep",t:"reps",c:"#263238"},
+    ],
+    tips:["Deadstop = la KB tocca il suolo e si ferma completamente prima di ogni rep. No bounce, no elasticità.","Deadstop Swing: posa a terra → riparti da zero ogni volta. Più duro dello swing normale — richiede più forza iniziale."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["KB Deadlift","6× (SA DL + SA DL) / lato — deadstop","Posa a terra tra ogni rep — hinge pulito ogni volta"],["One Arm Swing","6 Deadstop Swing / lato — da terra","Posa → pausa → riparti da zero — no bounce"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP19: Helldiver (2 KB preferred) ─────────────────────────────────────
+  {
+    id:"BP19",label:"Helldiver",emoji:"🔱",color:"#880E4F",
+    title:"Helldiver",
+    meta:"Bellplex · ~20 min · 5 serie · 2 KB preferibili",
+    totalMin:20,
+    how:"Swing + Snatch + Thruster × 5 rip. Preferibilmente con due KB. Schema tre movimenti classici in sequenza. 5 serie.",
+    structure:[["Serie","5"],["Schema","(Swing + Snatch + Thruster) × 5 rip"],["Stile","2 KB preferred / 1 KB OK"],["Rest","60-90\""]],
+    exercises:[
+      {n:"1",name:"One Arm Swing",detail:"5 rip — base esplosiva",t:"reps",c:"#880E4F"},
+      {n:"2",name:"KB Snatch",detail:"5 rip — overhead",t:"reps",c:"#880E4F"},
+      {n:"3",name:"Thruster",detail:"5 rip — squat + press",t:"reps",c:"#880E4F"},
+    ],
+    tips:["Con una KB sola: fai tutto su un lato poi cambia. Con due KB: lavora in parallelo.","Thruster con doppia KB: rack → squat → press entrambe insieme. Più difficile ma più volume."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["One Arm Swing","5 rip / lato","Anca esplosiva — spalla packed"],["KB Snatch","5 rip / lato","Traiettoria verticale — lockout — corkscrew"],["Thruster","5 rip / lato","Squat profondo → drive → press — 1 movimento"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira"});
+      }
+      return seq;
+    }
+  },
+
+  // ── BP20: Worst Complex Ever (2 KB) ──────────────────────────────────────
+  {
+    id:"BP20",label:"Worst Complex Ever",emoji:"☠️",color:"#212121",
+    title:"Worst Complex Ever",
+    meta:"Bellplex · ~25 min · 5 serie · DOPPIA KB",
+    totalMin:25,
+    how:"10 Rows + 10 Cleans + 10 Thrusters con DOPPIA KB. Il volume più alto di tutti i complexes. Non per principianti. 5 serie con 90\" rest. Testa la resistenza al limite.",
+    structure:[["Serie","5"],["Schema","10 Double Row + 10 Double Clean + 10 Double Thruster"],["Stile","DOPPIA KB — volume estremo"],["Rest","90\""]],
+    exercises:[
+      {n:"1",name:"KB Row",detail:"10 Double Row — entrambe le KB",t:"reps",c:"#212121"},
+      {n:"2",name:"KB Clean",detail:"10 Double Clean — rack doppio",t:"reps",c:"#212121"},
+      {n:"3",name:"Thruster",detail:"10 Double Thruster — squat + press doppio",t:"reps",c:"#212121"},
+    ],
+    tips:["10+10+10 con doppia KB = 30 rip totali per serie. È il volume più alto di tutti i Bellplex complexes — per questo si chiama 'Worst'.","Rest 90\" minimi tra serie. Se necessario arriva a 2 minuti. Non compromettere la tecnica sulle ultime rip.","Con una sola KB: fai 10 rip/lato per ogni esercizio. Più lungo ma fattibile."],
+    buildSeq:function(){
+      const seq=[];
+      for(let r=1;r<=5;r++){
+        [["KB Row","10 Double Row — DOPPIA KB","Entrambe insieme — tira verso l'anca — schiena piatta"],["KB Clean","10 Double Clean — rack doppio","Entrambe in rack — gomiti chiusi — zero oscillazione"],["Thruster","10 Double Thruster — squat + press","Squat con doppia KB in rack → press insieme — esplosivo"]].forEach(([n,reps,cue])=>
+          seq.push({name:n,round:r,totalRounds:5,timerSec:null,type:"work",repsOverride:reps,cueOverride:cue}));
+        if(r<5) seq.push({name:"Rest",round:r,totalRounds:5,timerSec:90,type:"rest",repsOverride:"90\" rest obbligatori",cueOverride:"Respira — recupero fondamentale"});
+      }
+      return seq;
+    }
+  },
+
   // ── D1: Total Tension Complex (adattato KB singola) ───────────────────────
   {
     id:"D1",label:"GIORNO D1",emoji:"🔩",color:"#FF1744",
@@ -2912,12 +3686,14 @@ function renderHealth(){
         <div style="flex:1;">
           <label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">PESO (kg)</label>
           <input class="log-input" type="number" step="0.1" placeholder="es. 78.5"
+            id="health-input-weight"
             value="${f.weight||''}" oninput="state.healthForm.weight=this.value"
             inputmode="decimal" style="width:100%;"/>
         </div>
         <div style="flex:1;">
           <label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">HRV (ms)</label>
           <input class="log-input" type="number" placeholder="es. 55"
+            id="health-input-hrv"
             value="${f.hrv||''}" oninput="state.healthForm.hrv=this.value"
             inputmode="numeric" style="width:100%;"/>
         </div>
@@ -2926,6 +3702,7 @@ function renderHealth(){
         <div style="flex:1;">
           <label style="font-size:10px;color:#607080;display:block;margin-bottom:4px;">SONNO (ore)</label>
           <input class="log-input" type="number" step="0.5" placeholder="es. 7.5"
+            id="health-input-sleep"
             value="${f.sleep||''}" oninput="state.healthForm.sleep=this.value"
             inputmode="decimal" style="width:100%;"/>
         </div>
@@ -3182,20 +3959,29 @@ function renderHealth(){
 }
 
 function saveHealthEntry(){
-  const f=state.healthForm;
-  if(!f.weight&&!f.hrv&&!f.sleep){
-    alert("Inserisci almeno un valore.");return;
+  // Legge direttamente dal DOM per evitare perdita valori dopo render()
+  const wEl=document.getElementById('health-input-weight');
+  const hEl=document.getElementById('health-input-hrv');
+  const sEl=document.getElementById('health-input-sleep');
+  const weight=wEl?wEl.value.trim():"";
+  const hrv=hEl?hEl.value.trim():"";
+  const sleep=sEl?sEl.value.trim():"";
+  const sleepQ=state.healthForm.sleepQ||null;
+
+  if(!weight&&!hrv&&!sleep){
+    showToast("⚠️ Inserisci almeno un valore","err");return;
   }
   const entry={
     date:new Date().toLocaleDateString("it-IT"),
-    weight:f.weight?Number(f.weight):null,
-    hrv:f.hrv?Number(f.hrv):null,
-    sleep:f.sleep?Number(f.sleep):null,
-    sleepQ:f.sleepQ||null,
+    weight:weight?Number(weight):null,
+    hrv:hrv?Number(hrv):null,
+    sleep:sleep?Number(sleep):null,
+    sleepQ:sleepQ,
   };
   state.healthHistory.push(entry);
   saveHealthHistory();
   state.healthForm={weight:"",hrv:"",sleep:"",sleepQ:null};
+  showToast("✅ Misurazione salvata","ok");
   render();
 }
 
@@ -3207,6 +3993,581 @@ function deleteHealthEntry(i){
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
+// ── PLAN TAB ─────────────────────────────────────────────────────────────────
+function planSuggest(){
+  const p=state.plan;
+  const dow=new Date().getDay(); // 0=dom,6=sab
+  const lastSess=state.history[state.history.length-1]||null;
+  const lastExt=state.externalHistory[state.externalHistory.length-1]||null;
+  // Determina se sabato → anelli (solo se satFixed ON)
+  if(dow===6&&p.satFixed) return {type:"rings",reason:"È sabato — giorno fisso anelli."};
+  if(dow===0&&p.sunOptional) return {type:"rings",reason:"Domenica opzionale anelli attiva."};
+  // Infrasettimanale: alterna KB/BW in base all'ultimo
+  const lastType=lastExt?.type||null;
+  if(lastType==="BW"||lastType==="Calisthenics") return {type:"kb",reason:"Ultima sessione era Bodyweight — oggi KB per bilanciare."};
+  if(lastSess&&!lastExt) return {type:"bw",reason:"Ultima sessione era KB — oggi BW funzionale per variare."};
+  return {type:"kb",reason:"Nessuna sessione recente rilevata — inizia con KB."};
+}
+
+function planAccToggle(id){
+  state.plan.openAcc=state.plan.openAcc===id?null:id;render();
+  setTimeout(()=>{const el=document.getElementById("pacc-"+id);if(el)el.scrollIntoView({behavior:"smooth",block:"nearest"});},80);
+}
+function planSetSubTab(t){state.plan.subTab=t;render();}
+function planToggle(key){state.plan[key]=!state.plan[key];savePlan();render();}
+function planSetPhase(n){state.plan.ringsPhase=n;state.plan.ringsWorkout=1;savePlan();render();}
+function planSetRingsW(n){state.plan.ringsWorkout=n;savePlan();render();}
+function planToggleDay(d){state.plan.activeDays[d]=!state.plan.activeDays[d];savePlan();render();}
+function savePlan(){localStorage.setItem("kb-plan",JSON.stringify(state.plan));}
+
+// Ripristina plan da localStorage all'avvio (aggiunto in init)
+(function(){const saved=localStorage.getItem("kb-plan");if(saved)try{state.plan={...state.plan,...JSON.parse(saved)};}catch(e){}})();
+
+function renderPlan(){
+  const p=state.plan;
+  const sub=p.subTab||"oggi";
+  const sug=planSuggest();
+
+  // Colori metodi
+  const C={kb:"#FF5722",bw:"#00BCD4",rings:"#43A047",axe:"#9C27B0"};
+  const EMO={kb:"🏋️",bw:"🤸",rings:"🔩",axe:"🪓"};
+  const NM={kb:"Kettlebell",bw:"Bodyweight",rings:"Anelli BW Jacked",axe:"AXE Pavel"};
+
+  // Video YouTube anelli BW Jacked Phase/Workout
+  const ringVideos={
+    "1-1":"https://www.youtube.com/results?search_query=TMB+pull+up+bodyweight+jacked",
+    "1-2":"https://www.youtube.com/results?search_query=bodyweight+row+close+grip+push+up+circuit",
+    "1-3":"https://www.youtube.com/results?search_query=chin+up+bulgarian+split+squat+l+sit+circuit",
+    "2-1":"https://www.youtube.com/results?search_query=ring+pull+up+ring+dip+gymnastic+rings",
+    "2-2":"https://www.youtube.com/results?search_query=chin+up+knee+raise+judo+push+up+sliding+leg+curl",
+    "2-3":"https://www.youtube.com/results?search_query=gymnastic+rings+L+sit+plank+walkout+skater+squat",
+    "3-1":"https://www.youtube.com/results?search_query=ring+pull+up+paused+skater+squat+advanced",
+    "3-2":"https://www.youtube.com/results?search_query=TMB+chin+up+feet+elevated+push+up+sliding+leg+curl",
+    "3-3":"https://www.youtube.com/results?search_query=ring+fallout+ring+dip+skater+squat+advanced+rings",
+  };
+  const bwVideos={
+    push:"https://www.youtube.com/results?search_query=push+up+dip+pike+push+up+circuit+calisthenics",
+    pull:"https://www.youtube.com/results?search_query=chin+up+bodyweight+row+face+pull+circuit",
+    legs:"https://www.youtube.com/results?search_query=squat+lunge+plank+l+sit+legs+core+circuit",
+    full:"https://www.youtube.com/results?search_query=burpee+push+up+squat+pull+up+full+body+circuit",
+  };
+
+  // Workout anelli per fase/workout
+  const ringsWk={
+    "1-1":{name:"W1 — TMB Pull-up + Squat 1.5",ex:["TMB Pull-up 3-8 rip","Push-up max rip","Squat 1.5 15 rip","Jump Squat 5-8 rip","Knee Raise 8-10 rip"],note:"3-5 round · rest 30\" esercizi · 2' round"},
+    "1-2":{name:"W2 — Row + Close Grip Push",ex:["Body Row 8-12 rip","Close Grip Push 10-20 rip","Reverse Lunge 10-15/gamba","Split Jump 5-8/gamba","Plank Walkout 5-10 rip"],note:"3-5 round · aggiungi pausa se 12 rep è facile"},
+    "1-3":{name:"W3 — Chin-up + Bulgarian Split",ex:["Chin-up 3-10 rip","1.5 Rep Push-up 8-15 rip","Bulgarian Split Squat 10-15/gamba","Side Plank 30-60\" per lato","Leg Raise 8-10 rip"],note:"3-5 round · pausa 1\" in basso sullo squat"},
+    "2-1":{name:"W1 — Ring Pull-up + Ring Dip",ex:["Ring Pull-up 6-12 rip","Ring Dip 5-10 rip","Bulgarian Split 10-15/gamba","Body Row 8-12 rip (rest-pause)","Push-up 10-20 rip (rest-pause)","Knee Raise 5-10 rip"],note:"3-5 round · 🔩 anelli necessari"},
+    "2-2":{name:"W2 — Chin-up Knee Raise + Sliding Leg Curl",ex:["Chin-up Knee Raise 5-8 rip","Judo Push-up 8-12 rip","Sliding Leg Curl 10-15 rip","Leg Raise 10-15 rip","Face Pull 10-15 rip (rest-pause)","Walking Lunge 10-12/gamba"],note:"3-5 round · 🔩 anelli necessari"},
+    "2-3":{name:"W3 — Row + Ring 1.5 Push-up",ex:["Body Row 8-12 rip (iso countdown)","Ring 1.5 Push-up 8-12 rip","Skater Squat 3-6/gamba","Reverse Lunge 10-15/gamba","L-Sit Hold max tempo","Plank Walkout 8-12 rip"],note:"3-5 round · 🔩 anelli necessari"},
+    "3-1":{name:"W1 — Ring Pull-up paused + Skater",ex:["Ring Pull-up 5-10 rip (iso countdown)","Ring Dip 5-10 rip","Skater Squat 5-10 rip (rest-pause)","1.5 Rep Body Row 8-12 rip","L-Sit Hold max tempo","Side Plank 60-90\""],note:"3-5 round · 🔩 anelli necessari"},
+    "3-2":{name:"W2 — TMB Chin-up + Sliding Leg Curl",ex:["TMB Chin-up 5-10 rip","Feet Elev. Close Push 8-12 rip (pausa 2\")","Sliding Leg Curl 10-20 rip","Reverse Lunge 10-15/gamba","Face Pull 10-15 rip","Leg Raise 10-15 rip"],note:"3-5 round · 🔩 anelli necessari"},
+    "3-3":{name:"W3 — Ring Pull-up + Ring Fallout",ex:["Ring Pull-up 5-10 rip (pausa top 1\")","Ring Dip 5-10 rip (pausa basso)","Skater Squat 5-10/gamba","Ring Fallout 5-10 rip","Body Row max rip","L-Sit Hold max tempo"],note:"3-5 round · 🔩 anelli necessari · fase più avanzata"},
+  };
+
+  const bwCircuits=[
+    {id:"push",name:"Push Circuit",ex:["Push-up","Dip su sedia/parallele","Pike Push-up","Close Grip Push-up"],note:"4 round · 10-15 rip · rest 45\"",vid:bwVideos.push},
+    {id:"pull",name:"Pull Circuit",ex:["Chin-up / Pull-up","Body Row","Face Pull con elastico","Inverted Row"],note:"4 round · 8-12 rip · rest 60\"",vid:bwVideos.pull},
+    {id:"legs",name:"Legs + Core",ex:["Squat","Reverse Lunge","Plank","L-Sit Hold","Side Plank"],note:"4 round · 12-15 rip · rest 45\"",vid:bwVideos.legs},
+    {id:"full",name:"Full Body Circuit",ex:["Burpee","Push-up","Squat","Pull-up / Chin-up","Mountain Climber"],note:"5 round · 10 rip · rest 30\"",vid:bwVideos.full},
+  ];
+
+  // Giorni settimana strip
+  const DOW_KEYS=["sun","mon","tue","wed","thu","fri","sat"];
+  const DOW_IT=["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
+  const today=new Date().getDay();
+  const weekLog=[...state.history,...state.externalHistory].filter(h=>{
+    const d=new Date();d.setHours(0,0,0,0);
+    const start=new Date(d);start.setDate(d.getDate()-d.getDay());
+    return true; // semplificato — mostra tutti
+  });
+
+  // ── SUB TAB: OGGI ─────────────────────────────────────────────────────────
+  function tabOggi(){
+    const sugColor=C[sug.type];
+    const sugName=NM[sug.type];
+    const sugEmo=EMO[sug.type];
+
+    let sugDetail="";
+    if(sug.type==="rings"){
+      const wk=ringsWk[`${p.ringsPhase}-${p.ringsWorkout}`]||ringsWk["1-1"];
+      const vidKey=`${p.ringsPhase}-${p.ringsWorkout}`;
+      sugDetail=`
+        <div style="margin-top:10px;padding:12px;background:#080C0F;border-radius:12px;">
+          <div style="font-size:11px;font-weight:700;color:${sugColor};margin-bottom:8px;">${wk.name}</div>
+          ${wk.ex.map(e=>`<div style="font-size:12px;color:#8090A0;padding:3px 0;border-bottom:1px solid #1E2A35;">· ${e}</div>`).join("")}
+          <div style="margin-top:6px;font-size:11px;color:#3A4A55;">${wk.note}</div>
+          <button onclick="startRingsWorkout(${p.ringsPhase},${p.ringsWorkout})" style="width:100%;margin-top:10px;padding:14px;border-radius:12px;background:#43A047;color:#000;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;border:none;">▶ START ANELLI W${p.ringsWorkout}</button>
+        </div>`;
+    }else if(sug.type==="bw"){
+      sugDetail=`<div style="margin-top:10px;font-size:12px;color:#8090A0;">Scegli il circuito qui sotto ↓</div>`;
+    }else{
+      sugDetail=`<div style="margin-top:10px;font-size:12px;color:#8090A0;">Scegli il workout KB qui sotto ↓</div>`;
+    }
+
+    return `
+    <div style="margin:0 16px 14px;padding:14px 16px;border-radius:16px;background:${sugColor}12;border:1.5px solid ${sugColor}44;">
+      <div style="font-size:10px;letter-spacing:3px;color:${sugColor};margin-bottom:8px;">💡 SUGGERIMENTO OGGI · ${DOW_IT[today].toUpperCase()}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <span style="font-size:32px;">${sugEmo}</span>
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${sugColor};line-height:1.1;">${sugName}</div>
+          <div style="font-size:11px;color:var(--muted);">${sug.type==="rings"?`Phase ${p.ringsPhase} · W${p.ringsWorkout}`:"Scegli dalla lista"}</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#8090A0;line-height:1.5;margin-bottom:8px;">${sug.reason}</div>
+      ${sugDetail}
+    </div>
+
+    <div style="padding:0 16px 8px;font-size:10px;letter-spacing:3px;color:var(--muted);">SCEGLI MANUALMENTE</div>
+
+    <!-- KB -->
+    <div style="margin:0 16px 8px;border-radius:14px;overflow:hidden;border:1.5px solid #FF572444;">
+      <button onclick="planAccToggle('kb')" style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:#FF572412;width:100%;text-align:left;border:none;color:var(--text);">
+        <span style="font-size:28px;">🏋️</span>
+        <div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FF5722;">Kettlebell</div><div style="font-size:11px;color:var(--muted);">A · B · C · D1 · 14 EXTRA</div></div>
+        <span style="font-size:18px;color:var(--muted);transition:transform 0.2s;${p.openAcc==='kb'?'transform:rotate(90deg)':''}">›</span>
+      </button>
+      ${p.openAcc==='kb'?`<div style="padding:12px 16px 14px;border-top:1px solid #1E2A35;background:#080C0F;">
+        ${["A","B","C"].map(k=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:#0F1419;border-radius:10px;border:1px solid #1E2A35;margin-bottom:6px;">
+          <div style="width:8px;height:8px;border-radius:2px;background:${DAYS[k].color};flex-shrink:0;"></div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Giorno ${k} — ${DAYS[k].subtitle}</div><div style="font-size:11px;color:var(--muted);">${DAYS[k].focus}</div></div>
+          <button onclick="startWorkout('${k}')" style="background:${DAYS[k].color};color:#000;border-radius:10px;padding:8px 12px;font-family:'Bebas Neue',sans-serif;font-size:15px;border:none;">▶</button>
+        </div>`).join("")}
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:#0F1419;border-radius:10px;border:1px solid #1E2A35;margin-bottom:6px;">
+          <div style="width:8px;height:8px;border-radius:2px;background:#FF1744;flex-shrink:0;"></div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:700;">D1 — Total Tension</div><div style="font-size:11px;color:var(--muted);">Pavel · Clean→Press→Squat→Row</div></div>
+          <button onclick="state.extraWorkoutId='D1';state.tab='extra-detail';render();" style="background:#FF1744;color:#fff;border-radius:10px;padding:8px 12px;font-family:'Bebas Neue',sans-serif;font-size:15px;border:none;">▶</button>
+        </div>
+        <button onclick="switchTab('extra')" style="width:100%;padding:10px;border-radius:10px;background:#7C4DFF20;border:1px solid #7C4DFF44;color:#7C4DFF;font-size:13px;font-weight:700;margin-top:2px;">⚡ Vedi tutti gli EXTRA →</button>
+      </div>`:""}
+    </div>
+
+    <!-- BW Funzionale -->
+    <div style="margin:0 16px 8px;border-radius:14px;overflow:hidden;border:1.5px solid #00BCD444;">
+      <button onclick="planAccToggle('bw')" style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:#00BCD412;width:100%;text-align:left;border:none;color:var(--text);">
+        <span style="font-size:28px;">🤸</span>
+        <div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#00BCD4;">Bodyweight</div><div style="font-size:11px;color:var(--muted);">Circuiti · no attrezzi · Leo Moves style</div></div>
+        <span style="font-size:18px;color:var(--muted);transition:transform 0.2s;${p.openAcc==='bw'?'transform:rotate(90deg)':''}">›</span>
+      </button>
+      ${p.openAcc==='bw'?`<div style="padding:12px 16px 14px;border-top:1px solid #1E2A35;background:#080C0F;">
+        ${bwCircuits.map(c=>`<div style="padding:10px 12px;background:#0F1419;border-radius:10px;border:1px solid #1E2A35;margin-bottom:6px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="font-size:13px;font-weight:700;color:#00BCD4;">${c.name}</div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <a href="${c.vid}" target="_blank" style="font-size:11px;color:#FF4444;font-weight:700;text-decoration:none;padding:5px 8px;background:#FF000015;border:1px solid #FF000030;border-radius:8px;">▶ Vid</a>
+              <button onclick="startBwCircuit('${c.id}')" style="background:#00BCD4;color:#000;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;border:none;">▶ Start</button>
+            </div>
+          </div>
+          <div style="font-size:11px;color:#8090A0;margin-bottom:4px;">${c.ex.join(" · ")}</div>
+          <div style="font-size:10px;color:#3A4A55;">${c.note}</div>
+        </div>`).join("")}
+      </div>`:""}
+    </div>
+
+    <!-- Anelli -->
+    <div style="margin:0 16px 8px;border-radius:14px;overflow:hidden;border:1.5px solid #43A04744;">
+      <button onclick="planAccToggle('rings')" style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:#43A04712;width:100%;text-align:left;border:none;color:var(--text);">
+        <span style="font-size:28px;">🔩</span>
+        <div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#43A047;">Anelli — BW Jacked</div><div style="font-size:11px;color:var(--muted);">Phase ${p.ringsPhase} · W${p.ringsWorkout} · Coulson 2020</div></div>
+        <span style="font-size:18px;color:var(--muted);transition:transform 0.2s;${p.openAcc==='rings'?'transform:rotate(90deg)':''}">›</span>
+      </button>
+      ${p.openAcc==='rings'?`<div style="padding:12px 16px 14px;border-top:1px solid #1E2A35;background:#080C0F;">
+        ${[1,2,3].map(ph=>{
+          const locked=ph>p.ringsPhase;
+          return `<div style="margin-bottom:10px;">
+            <div style="font-size:10px;letter-spacing:2px;color:${locked?'#3A4A55':'#43A047'};margin-bottom:6px;">PHASE ${ph}${locked?' 🔒':''}</div>
+            ${[1,2,3].map(w=>{
+              const key=`${ph}-${w}`;
+              const wk=ringsWk[key];
+              const isActive=ph===p.ringsPhase&&w===p.ringsWorkout;
+              return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:${isActive?'#43A04720':'#0F1419'};border-radius:10px;border:1px solid ${isActive?'#43A04766':'#1E2A35'};margin-bottom:5px;${locked?'opacity:0.4;':''}" >
+                <div style="flex:1;">
+                  <div style="font-size:12px;font-weight:700;color:${isActive?'#43A047':'var(--text)'};">${wk.name}</div>
+                  <div style="font-size:10px;color:var(--muted);margin-top:2px;">${wk.note}</div>
+                </div>
+                ${!locked?`
+                  <a href="${ringVideos[key]}" target="_blank" style="font-size:11px;color:#FF4444;font-weight:700;text-decoration:none;padding:5px 8px;background:#FF000015;border:1px solid #FF000030;border-radius:8px;flex-shrink:0;">▶ Vid</a>
+                  <button onclick="startRingsWorkout(${ph},${w})" style="background:${isActive?'#43A047':'#1E2A35'};color:${isActive?'#000':'var(--muted)'};border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;border:none;flex-shrink:0;">▶ Start</button>
+                `:`<span style="font-size:11px;color:#3A4A55;padding:5px 8px;">🔒</span>`}
+              </div>`;
+            }).join("")}
+          </div>`;
+        }).join("")}
+      </div>`:""}
+    </div>`;
+  }
+
+  // ── SUB TAB: SETTIMANA ────────────────────────────────────────────────────
+  function tabSettimana(){
+    const dayKeys=["sun","mon","tue","wed","thu","fri","sat"];
+    const dayIt=["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
+
+    // Calcola tipo per ogni giorno questa settimana dallo storico
+    const now=new Date();
+    const startOfWeek=new Date(now);startOfWeek.setDate(now.getDate()-now.getDay());startOfWeek.setHours(0,0,0,0);
+    const weekSess=[...state.history,...state.externalHistory];
+
+    const daySessions=dayKeys.map((_,di)=>{
+      // Placeholder — nell'app reale leggerebbe dal log per data
+      return null;
+    });
+
+    const logicItems=[
+      {color:"#43A047",title:"SAB → suggerisce Anelli",desc:`${p.satFixed?"Sabato fisso anelli attivo — sempre BW Jacked.":"Sabato NON fisso — scegli liberamente anche KB o BW."}`},
+      {color:"#FF5722",title:"Ultimo KB → suggerisce BW",desc:"Se l'ultima sessione era KB, oggi l'app suggerisce BW funzionale."},
+      {color:"#00BCD4",title:"Ultimo BW → suggerisce KB",desc:"Se l'ultima era BW, oggi suggerisce KB. Alternanza automatica."},
+      {color:"#EF5350",title:"Nessuna sessione → KB",desc:"Se non ci sono sessioni recenti, parte sempre da KB."},
+    ];
+
+    return `
+    <div style="padding:0 16px 8px;font-size:10px;letter-spacing:3px;color:var(--muted);">QUESTA SETTIMANA</div>
+    <div style="display:flex;gap:4px;padding:0 16px 14px;">
+      ${dayKeys.map((dk,di)=>{
+        const isToday=di===today;
+        const isSat=di===6;const isSun=di===0;
+        const isRings=(isSat&&p.satFixed)||(isSun&&p.sunOptional);
+        const isActive=p.activeDays[dk];
+        const borderCol=isRings?"#43A047":isActive?"#FF5722":"#1E2A35";
+        const bgCol=isRings?"#43A04712":isActive?"#FF572212":"transparent";
+        const typeLabel=isRings?"🔩":isActive?"KB/BW":"—";
+        const typeColor=isRings?"#43A047":isActive?"#FF5722":"#3A4A55";
+        return `<div style="flex:1;border-radius:10px;border:1.5px solid ${isToday?'#FFC107':borderCol};background:${isToday?'#FFC10710':bgCol};text-align:center;padding:8px 2px;">
+          <span style="font-size:9px;color:${isToday?'#FFC107':'var(--muted)'};display:block;margin-bottom:4px;">${dayIt[di].toUpperCase()}</span>
+          <span style="font-size:11px;font-weight:700;color:${typeColor};display:block;">${typeLabel}</span>
+          ${isToday?`<span style="font-size:8px;color:#FFC107;display:block;margin-top:2px;">oggi</span>`:`<span style="font-size:8px;color:#3A4A55;display:block;margin-top:2px;">·</span>`}
+        </div>`;
+      }).join("")}
+    </div>
+
+    <div style="padding:0 16px 8px;font-size:10px;letter-spacing:3px;color:var(--muted);">LOGICA SUGGERIMENTO</div>
+    <div style="padding:0 16px;">
+      ${logicItems.map(l=>`<div style="padding:10px 12px;background:#0F1419;border-radius:10px;border-left:3px solid ${l.color};margin-bottom:7px;">
+        <div style="font-size:11px;font-weight:700;color:${l.color};margin-bottom:2px;">${l.title}</div>
+        <div style="font-size:11px;color:#8090A0;line-height:1.5;">${l.desc}</div>
+      </div>`).join("")}
+    </div>
+
+    <div style="padding:14px 16px 8px;font-size:10px;letter-spacing:3px;color:var(--muted);">PROGRESSIONE ANELLI · BW JACKED</div>
+    ${[1,2,3].map(ph=>{
+      const active=ph===p.ringsPhase;
+      const locked=ph>p.ringsPhase;
+      const phNames=["Phase 1 — Pull-up bar","Phase 2 — Ring Pull-up + Dip","Phase 3 — Ring Fallout + Skater"];
+      const phDescs=["TMB Pull-up · Push-up · Squat 1.5 · Chin-up · Bulgarian Split · 4 sett.","Ring Pull-up · Ring Dip · Sliding Leg Curl · rest-pause · 4 sett.","Ring Fallout · Skater Squat · L-Sit avanzato · iso countdown · 4 sett."];
+      const phEq=["Pull-up bar","Pull-up bar + anelli ginnici","Pull-up bar + anelli ginnici"];
+      return `<div id="pacc-ph${ph}" style="margin:0 16px 8px;border-radius:14px;overflow:hidden;border:1.5px solid ${active?'#43A04766':'#1E2A35'};${locked?'opacity:0.5;':''}">
+        <button onclick="${!locked?`planAccToggle('ph${ph}')`:''}" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:${active?'#43A04710':'transparent'};width:100%;text-align:left;border:none;color:var(--text);">
+          <div style="width:36px;height:36px;border-radius:10px;background:${active?'#43A04720':'#1E2A35'};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:${active?'#43A047':'var(--muted)'};flex-shrink:0;">P${ph}</div>
+          <div style="flex:1;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${active?'#43A047':'var(--muted)'};">${phNames[ph-1]}</div>
+            <div style="font-size:11px;color:var(--dim);">${phDescs[ph-1]}</div>
+          </div>
+          ${active?`<span style="background:#43A047;color:#000;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:6px;">ATTIVO</span>`:''}
+          ${locked?`<span style="font-size:13px;color:#3A4A55;">🔒</span>`:`<span style="font-size:18px;color:var(--muted);">${p.openAcc===`ph${ph}`?'▾':'›'}</span>`}
+        </button>
+        ${p.openAcc===`ph${ph}`?`<div style="padding:0 16px 14px;border-top:1px solid #1E2A35;">
+          <div style="font-size:11px;color:#43A047;margin:8px 0 4px;">🔩 ${phEq[ph-1]}</div>
+          ${[1,2,3].map(w=>{
+            const key=`${ph}-${w}`;const wk=ringsWk[key];
+            const isSel=ph===p.ringsPhase&&w===p.ringsWorkout;
+            return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:${isSel?'#43A04718':'#080C0F'};border-radius:10px;border:1px solid ${isSel?'#43A04755':'#1E2A35'};margin-bottom:5px;">
+              <div style="flex:1;"><div style="font-size:12px;font-weight:700;color:${isSel?'#43A047':'var(--text)'};">${wk.name}</div>
+              <div style="font-size:10px;color:#8090A0;margin-top:2px;">${wk.ex.slice(0,3).join(" · ")}...</div></div>
+              <a href="${ringVideos[key]}" target="_blank" style="font-size:11px;color:#FF4444;font-weight:700;text-decoration:none;padding:5px 8px;background:#FF000015;border:1px solid #FF000030;border-radius:8px;flex-shrink:0;">▶</a>
+            </div>`;
+          }).join("")}
+        </div>`:""}
+      </div>`;
+    }).join("")}`;
+  }
+
+  // ── SUB TAB: CONFIG ────────────────────────────────────────────────────────
+  function tabConfig(){
+    const dayKeys=["mon","tue","wed","thu","fri"];
+    const dayIt=["Lun","Mar","Mer","Gio","Ven"];
+    return `
+    <div style="padding:0 16px;">
+      <div style="font-size:10px;letter-spacing:3px;color:#43A047;margin-bottom:8px;">WEEKEND ANELLI</div>
+      ${[
+        {key:"satFixed",label:"Sabato",sub:"Workout anelli fisso"},
+        {key:"sunOptional",label:"Domenica",sub:"Workout anelli opzionale"},
+      ].map(t=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#0F1419;border-radius:12px;margin-bottom:7px;">
+        <div><div style="font-size:13px;font-weight:700;">${t.label}</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${t.sub}</div></div>
+        <button onclick="planToggle('${t.key}')" style="width:44px;height:24px;border-radius:12px;border:none;background:${p[t.key]?'#43A047':'#1E2A35'};position:relative;cursor:pointer;flex-shrink:0;">
+          <span style="position:absolute;width:18px;height:18px;border-radius:9px;background:#fff;top:3px;${p[t.key]?'right:3px':'left:3px'};transition:all 0.2s;"></span>
+        </button>
+      </div>`).join("")}
+
+      <div style="font-size:10px;letter-spacing:3px;color:var(--muted);margin:14px 0 8px;">GIORNI INFRASETTIMANALI</div>
+      <div style="font-size:12px;color:#8090A0;margin-bottom:10px;line-height:1.5;">Seleziona i giorni disponibili. L'app alterna KB e BW automaticamente.</div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;">
+        ${dayKeys.map((dk,di)=>{
+          const on=p.activeDays[dk];
+          return `<button onclick="planToggleDay('${dk}')" style="flex:1;padding:10px 4px;border-radius:10px;border:1.5px solid ${on?'#FF572466':'#1E2A35'};background:${on?'#FF572420':'transparent'};color:${on?'#FF5722':'var(--muted)'};font-weight:700;font-size:12px;">${dayIt[di]}</button>`;
+        }).join("")}
+      </div>
+
+      <div style="font-size:10px;letter-spacing:3px;color:#43A047;margin-bottom:8px;">FASE ANELLI CORRENTE</div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;">
+        ${[1,2,3].map(n=>`<button onclick="planSetPhase(${n})" style="flex:1;padding:10px 4px;border-radius:10px;border:1.5px solid ${p.ringsPhase===n?'#43A047':'#1E2A35'};background:${p.ringsPhase===n?'#43A04720':'transparent'};color:${p.ringsPhase===n?'#43A047':'var(--muted)'};font-weight:700;font-size:12px;">Phase ${n}</button>`).join("")}
+      </div>
+
+      <div style="font-size:10px;letter-spacing:3px;color:#9C27B0;margin-bottom:8px;">AXE — PAVEL AGT</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#0F1419;border-radius:12px;margin-bottom:7px;">
+        <div><div style="font-size:13px;font-weight:700;">Includi AXE nel programma</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">1-2 sessioni/sett compatibili con tutto</div></div>
+        <button onclick="planToggle('axeOn')" style="width:44px;height:24px;border-radius:12px;border:none;background:${p.axeOn?'#9C27B0':'#1E2A35'};position:relative;cursor:pointer;flex-shrink:0;">
+          <span style="position:absolute;width:18px;height:18px;border-radius:9px;background:#fff;top:3px;${p.axeOn?'right:3px':'left:3px'};transition:all 0.2s;"></span>
+        </button>
+      </div>
+
+      <div style="height:8px;"></div>
+    </div>`;
+  }
+
+  // Inner tab bar
+  const subTabs=[
+    {id:"oggi",label:"Oggi"},
+    {id:"settimana",label:"Settimana"},
+    {id:"config",label:"Config"},
+  ];
+  const innerTabBar=`<div style="display:flex;gap:0;background:#080C0F;border-radius:10px;padding:3px;margin:0 16px 14px;">
+    ${subTabs.map(t=>`<button onclick="planSetSubTab('${t.id}')" style="flex:1;padding:8px 4px;border-radius:8px;font-size:12px;font-weight:700;background:${sub===t.id?'#0F1419':'transparent'};color:${sub===t.id?'#F0F4F8':'#607080'};border:none;cursor:pointer;">${t.label}</button>`).join("")}
+  </div>`;
+
+  return `<div class="screen">
+    <div style="padding:28px 22px 14px;text-align:center;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:5px;color:#43A047;margin-bottom:6px;">PROGRAMMA SETTIMANALE</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:34px;line-height:1.05;">KB · BW · ANELLI</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:5px;">Infrasettimanale flessibile · Weekend con anelli</div>
+    </div>
+    ${innerTabBar}
+    ${sub==="oggi"?tabOggi():sub==="settimana"?tabSettimana():tabConfig()}
+    ${navHTML("plan")}
+  </div>`;
+}
+// ── RENDER TRAIN ─────────────────────────────────────────────────────────────
+function renderTrain(){
+  const p=state.plan||{};
+  const sub=state.trainSubTab||"oggi";
+  const sug=getSmartSuggestion();
+  const sugCol=sug.color||"#FF5722";
+
+  // Bellplex workouts
+  const bpWorkouts=EXTRA_WORKOUTS.filter(w=>w.id.startsWith("BP"));
+  const otherExtra=EXTRA_WORKOUTS.filter(w=>!w.id.startsWith("BP")&&w.id!=="D1");
+  const d1=EXTRA_WORKOUTS.find(w=>w.id==="D1");
+
+  // AXE state
+  const axeP=state.axeProgress;
+  const axeEx=AXE_EX[axeP.exercise||"swing"]||AXE_EX["swing"];
+
+  // Inner tab bar
+  const subTabs=[
+    {id:"oggi",label:"💡 Oggi"},
+    {id:"kb",label:"🏋️ KB"},
+    {id:"bellplex",label:"🔥 Bellplex"},
+    {id:"axe",label:"🪓 AXE"},
+  ];
+  const innerBar=`<div style="display:flex;gap:0;background:#080C0F;border-radius:10px;padding:3px;margin:0 16px 14px;overflow-x:auto;">
+    ${subTabs.map(t=>`<button onclick="state.trainSubTab='${t.id}';render();" style="flex:1;min-width:0;white-space:nowrap;padding:8px 6px;border-radius:8px;font-size:11px;font-weight:700;background:${sub===t.id?'#0F1419':'transparent'};color:${sub===t.id?'#F0F4F8':'#607080'};border:none;cursor:pointer;">${t.label}</button>`).join("")}
+  </div>`;
+
+  // ── SUB: OGGI ─────────────────────────────────────────────────────────────
+  function tabOggi(){
+    const typeLabel={
+      rest:"Recupero",abc:"Kettlebell",axe:"AXE Pavel",
+      bellplex:"Bellplex",extra:"EXTRA KB",
+    }[sug.type]||"Allenamento";
+
+    const actionBtn=sug.action
+      ?`<button onclick="${sug.action}" style="width:100%;padding:14px;border-radius:12px;background:${sugCol};color:${sug.type==='axe'?'#fff':'#000'};font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;border:none;margin-top:10px;">${sug.actionLabel}</button>`
+      :"";
+
+    // Storico ultimo allenamento
+    const lastK=state.history.slice(-1)[0];
+    const lastA=state.axeHistory.slice(-1)[0];
+    const histHTML=`<div style="display:flex;gap:8px;margin-top:12px;">
+      ${lastK?`<div style="flex:1;padding:10px;background:#080C0F;border-radius:10px;border:1px solid #1E2A35;">
+        <div style="font-size:9px;letter-spacing:2px;color:#607080;margin-bottom:4px;">ULTIMA KB</div>
+        <div style="font-size:13px;font-weight:700;color:#FF5722;">Giorno ${lastK.day}</div>
+        <div style="font-size:11px;color:#607080;">${lastK.date||'—'}</div>
+      </div>`:''}
+      ${lastA?`<div style="flex:1;padding:10px;background:#080C0F;border-radius:10px;border:1px solid #1E2A35;">
+        <div style="font-size:9px;letter-spacing:2px;color:#607080;margin-bottom:4px;">ULTIMA AXE</div>
+        <div style="font-size:13px;font-weight:700;color:#9C27B0;">${lastA.sets||'?'} set × ${lastA.reps||'?'} rip</div>
+        <div style="font-size:11px;color:#607080;">${lastA.date||'—'}</div>
+      </div>`:''}
+    </div>`;
+
+    return `
+    <div style="margin:0 16px 14px;padding:16px;border-radius:16px;background:${sugCol}12;border:1.5px solid ${sugCol}44;">
+      <div style="font-size:10px;letter-spacing:3px;color:${sugCol};margin-bottom:10px;">💡 SUGGERIMENTO — ${typeLabel.toUpperCase()}</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <span style="font-size:36px;">${sug.icon}</span>
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${sugCol};line-height:1.1;">${sug.title}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${sug.tip}</div>
+        </div>
+      </div>
+      <div style="font-size:13px;color:#8090A0;line-height:1.5;margin-bottom:4px;">${sug.reason}</div>
+      ${actionBtn}
+    </div>
+
+    <div style="padding:0 16px 8px;font-size:10px;letter-spacing:3px;color:var(--muted);">ACCESSO RAPIDO</div>
+    <div style="margin:0 16px 10px;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#9C27B015;border-radius:12px;border:1px solid #9C27B033;">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#9C27B0;">🪓 AXE nel programma</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${p.axeOn?'Attivo — viene suggerito 2×/sett':'Disattivo — non viene suggerito'}</div>
+      </div>
+      <button onclick="planToggle('axeOn')" style="width:44px;height:24px;border-radius:12px;border:none;background:${p.axeOn?'#9C27B0':'#1E2A35'};position:relative;cursor:pointer;flex-shrink:0;">
+        <span style="position:absolute;width:18px;height:18px;border-radius:9px;background:#fff;top:3px;${p.axeOn?'right:3px':'left:3px'};transition:all 0.2s;"></span>
+      </button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px 14px;">
+      ${["A","B","C"].map(k=>`<button onclick="startWorkout('${k}')" style="padding:12px;border-radius:12px;background:${DAYS[k].color}18;border:1.5px solid ${DAYS[k].color}44;text-align:left;cursor:pointer;">
+        <div style="font-size:18px;margin-bottom:4px;">${DAYS[k].emoji}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${DAYS[k].color};">Giorno ${k}</div>
+        <div style="font-size:10px;color:var(--muted);">${DAYS[k].subtitle}</div>
+      </button>`).join("")}
+      <button id="train-axe-btn" onclick="state.trainSubTab='axe';render();" style="padding:12px;border-radius:12px;background:#9C27B018;border:1.5px solid #9C27B044;text-align:left;cursor:pointer;">
+        <div style="font-size:18px;margin-bottom:4px;">🪓</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#9C27B0;">AXE</div>
+        <div style="font-size:10px;color:var(--muted);">Pavel AGT · ${axeP.currentSets||14} set</div>
+      </button>
+    </div>
+    ${histHTML}`;
+  }
+
+  // ── SUB: KB ───────────────────────────────────────────────────────────────
+  function tabKB(){
+    return `
+    <div style="padding:0 16px 8px;font-size:10px;letter-spacing:3px;color:var(--muted);">GIORNI PRINCIPALI</div>
+    ${["A","B","C"].map(k=>{
+      const d=DAYS[k];
+      return `<div style="margin:0 16px 8px;padding:14px 16px;border-radius:14px;background:${d.color}12;border:1.5px solid ${d.color}44;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:32px;">${d.emoji}</span>
+        <div style="flex:1;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${d.color};">${d.label} — ${d.subtitle}</div>
+          <div style="font-size:12px;color:var(--muted);">${d.focus} · ~${d.totalMin} min</div>
+        </div>
+        <button onclick="startWorkout('${k}')" style="background:${d.color};color:#000;border-radius:10px;padding:10px 14px;font-family:'Bebas Neue',sans-serif;font-size:16px;border:none;">▶</button>
+      </div>`;
+    }).join("")}
+
+    <div style="padding:14px 16px 8px;font-size:10px;letter-spacing:3px;color:var(--muted);">D1 TOTAL TENSION</div>
+    ${d1?`<div style="margin:0 16px 8px;padding:14px 16px;border-radius:14px;background:#FF174418;border:1.5px solid #FF174444;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:32px;">${d1.emoji}</span>
+      <div style="flex:1;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FF1744;">${d1.label} — ${d1.title}</div>
+        <div style="font-size:12px;color:var(--muted);">${d1.meta}</div>
+      </div>
+      <button onclick="openExtraDetail('D1')" style="background:#FF1744;color:#fff;border-radius:10px;padding:10px 14px;font-family:'Bebas Neue',sans-serif;font-size:16px;border:none;">▶</button>
+    </div>`:""}
+
+    <div style="padding:14px 16px 8px;font-size:10px;letter-spacing:3px;color:var(--muted);">EXTRA WORKOUT (${otherExtra.length})</div>
+    ${otherExtra.map(w=>`<div style="margin:0 16px 6px;padding:11px 14px;border-radius:12px;background:#0F1419;border:1px solid #1E2A35;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:24px;">${w.emoji}</span>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:700;color:${w.color};">${w.label} — ${w.title}</div>
+        <div style="font-size:11px;color:var(--muted);">${w.meta}</div>
+      </div>
+      <button onclick="openExtraDetail('${w.id}')" style="background:${w.color};color:#000;border-radius:8px;padding:7px 12px;font-family:'Bebas Neue',sans-serif;font-size:14px;border:none;">▶</button>
+    </div>`).join("")}`;
+  }
+
+  // ── SUB: BELLPLEX ─────────────────────────────────────────────────────────
+  function tabBellplex(){
+    const levels=[
+      {label:"⭐ ENTRY",ids:["BP1","BP3","BP6","BP7","BP10","BP13","BP14"],desc:"Schema corto · ideale per iniziare con i complexes"},
+      {label:"⭐⭐ INTERMEDIO",ids:["BP2","BP4","BP5","BP8","BP9","BP11","BP15","BP18"],desc:"Snatch e movimenti tecnici · buona base richiesta"},
+      {label:"⭐⭐⭐ AVANZATO",ids:["BP11","BP12","BP16","BP17","BP19","BP20"],desc:"Doppia KB o volume alto · per atleti esperti"},
+    ];
+    return `
+    <div style="padding:0 16px 8px;">
+      <div style="font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:6px;">BELLPLEX TRAINING SYSTEMS · ${bpWorkouts.length} COMPLEXES</div>
+      <div style="font-size:12px;color:#8090A0;line-height:1.5;">KB singola (salvo indicazione) · 5 serie · 60-90" rest · nessun timer — rep-based</div>
+    </div>
+    ${levels.map(lv=>{
+      const wks=bpWorkouts.filter(w=>lv.ids.includes(w.id));
+      if(!wks.length)return "";
+      return `<div style="margin-bottom:4px;">
+        <div style="padding:6px 16px;font-size:10px;letter-spacing:2px;color:#FFC107;">${lv.label}</div>
+        <div style="font-size:11px;color:#3A4A55;padding:0 16px 8px;">${lv.desc}</div>
+        ${wks.map(w=>`<div style="margin:0 16px 6px;padding:12px 14px;border-radius:12px;background:#0F1419;border:1px solid ${w.color}33;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:24px;">${w.emoji}</span>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:700;color:${w.color};">${w.label} — ${w.title}</div>
+            <div style="font-size:11px;color:var(--muted);">${w.meta}</div>
+          </div>
+          <button onclick="openExtraDetail('${w.id}')" style="background:${w.color};color:#fff;border-radius:8px;padding:7px 12px;font-family:'Bebas Neue',sans-serif;font-size:14px;border:none;">▶</button>
+        </div>`).join("")}
+      </div>`;
+    }).join("")}`;
+  }
+
+  // ── SUB: AXE ──────────────────────────────────────────────────────────────
+  function tabAXE(){
+    // Riusa renderAxe() ma come stringa — più semplice rimandare al tab AXE reale
+    return `<div style="margin:0 16px 12px;padding:14px 16px;border-radius:14px;background:#9C27B015;border:1.5px solid #9C27B044;">
+      <div style="font-size:10px;letter-spacing:3px;color:#9C27B0;margin-bottom:10px;">AXE — ANTAGONIST TRAINING / PAVEL AGT</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <span style="font-size:36px;">🪓</span>
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#9C27B0;line-height:1.1;">${axeEx.label}</div>
+          <div style="font-size:12px;color:var(--muted);">${axeEx.level} · ${axeP.currentSets||14} set × ${axeP.repsPerSet||4} rip</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div style="padding:10px;background:#080C0F;border-radius:10px;">
+          <div style="font-size:9px;letter-spacing:2px;color:#607080;margin-bottom:4px;">SET CORRENTI</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#9C27B0;">${axeP.currentSets||14}</div>
+        </div>
+        <div style="padding:10px;background:#080C0F;border-radius:10px;">
+          <div style="font-size:9px;letter-spacing:2px;color:#607080;margin-bottom:4px;">REP / SET</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#9C27B0;">${axeP.repsPerSet||4}</div>
+        </div>
+        <div style="padding:10px;background:#080C0F;border-radius:10px;">
+          <div style="font-size:9px;letter-spacing:2px;color:#607080;margin-bottom:4px;">FASE</div>
+          <div style="font-size:13px;font-weight:700;color:#9C27B0;">${axeP.phase||"Fase 1"}</div>
+        </div>
+        <div style="padding:10px;background:#080C0F;border-radius:10px;">
+          <div style="font-size:9px;letter-spacing:2px;color:#607080;margin-bottom:4px;">REST TRA SET</div>
+          <div style="font-size:13px;font-weight:700;color:#9C27B0;">60"</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#8090A0;line-height:1.6;margin-bottom:12px;">${axeEx.cue}</div>
+      <a href="${axeEx.yt}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#FF000015;border:1px solid #FF000030;border-radius:10px;color:#FF4444;font-size:12px;font-weight:700;text-decoration:none;margin-bottom:12px;">▶ Video tecnica</a>
+      <button onclick="switchTab('axe')" style="width:100%;padding:14px;border-radius:12px;background:#9C27B0;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;border:none;">▶ START AXE</button>
+    </div>
+
+    <div style="margin:0 16px 12px;padding:14px;background:#0F1419;border-radius:14px;border:1px solid #1E2A35;">
+      <div style="font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:10px;">COMPATIBILITÀ AXE + ALTRI</div>
+      ${[
+        {col:"#FF5722",icon:"🏋️",t:"AXE + KB",d:"AXE non è glicolitico — puoi farlo lo stesso giorno di KB A/B/C. Ideale prima di KB o in giornata separata."},
+        {col:"#E53935",icon:"🔥",t:"AXE + Bellplex",d:"Bellplex è glicolitico — non fare AXE lo stesso giorno. Alterna: Lun Bellplex, Mar AXE, Mer KB..."},
+        {col:"#43A047",icon:"🔩",t:"AXE + Anelli",d:"Compatibile. AXE è balistico, anelli sono forza — sinergia ottima. AXE prima, anelli dopo."},
+      ].map(r=>`<div style="padding:9px 12px;background:#080C0F;border-radius:10px;border-left:3px solid ${r.col};margin-bottom:7px;">
+        <div style="font-size:11px;font-weight:700;color:${r.col};margin-bottom:2px;">${r.icon} ${r.t}</div>
+        <div style="font-size:11px;color:#8090A0;line-height:1.5;">${r.d}</div>
+      </div>`).join("")}
+    </div>`;
+  }
+
+  return `<div class="screen">
+    <div style="padding:26px 22px 12px;text-align:center;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:5px;color:#FF5722;margin-bottom:5px;">SCHEDA ALLENAMENTI</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:34px;line-height:1.05;">TRAIN</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;">KB · Bellplex Complexes · AXE Pavel</div>
+    </div>
+    ${innerBar}
+    ${sub==="oggi"?tabOggi():sub==="kb"?tabKB():sub==="bellplex"?tabBellplex():tabAXE()}
+    ${navHTML("train")}
+  </div>`;
+}
+// ── END RENDER TRAIN ──────────────────────────────────────────────────────────
+
+
+
 function render(){
   const app=document.getElementById("app");
   if(state.tab==="workout")         app.innerHTML=renderWorkout();
@@ -3215,8 +4576,9 @@ function render(){
   else if(state.tab==="axe")        app.innerHTML=renderAxe();
   else if(state.tab==="axe-workout")app.innerHTML=renderAxeWorkout();
   else if(state.tab==="axe-done")   app.innerHTML=renderAxeDone();
-  else if(state.tab==="programs")   app.innerHTML=renderPrograms();
-  else if(state.tab==="extra")      app.innerHTML=renderExtra();
+  else if(state.tab==="plan")       app.innerHTML=renderPlan();
+  else if(state.tab==="train")      app.innerHTML=renderTrain();
+  else if(state.tab==="extra")      app.innerHTML=renderTrain(); // redirect
   else if(state.tab==="extra-detail")app.innerHTML=renderExtraDetail();
   else if(state.tab==="health")     app.innerHTML=renderHealth();
   else                               app.innerHTML=renderHome();
@@ -3256,6 +4618,7 @@ function startWorkout(key){
 function exitWorkout(){
   clearTimerInterval();releaseWakeLock();
   if(state.extraWorkoutId){state.tab="extra-detail";}
+  else if(state.dayKey==="bw_jacked"||state.dayKey==="bw_circuit"){state.tab="plan";}
   else{state.tab="home";}
   state.timerRunning=false;render();
 }
@@ -3500,10 +4863,10 @@ function saveAxeSession(){
   if(ax.setsDone>pr.currentSets)pr.currentSets=ax.setsDone;
   if(pr.currentSets>=30&&pr.phase==="fase 1"){
     pr.phase="fase 2";pr.currentSets=0;pr.repsPerSet=6;
-    alert("🎉 Fase 1 completata! Ora 6 reps/set — ricomincia da 10 set.");
+    showToast("🎉 Fase 1 completata! Ora 6 reps/set","ok");
   } else if(pr.currentSets>=30&&pr.phase==="fase 2"){
     pr.phase="fase 3";pr.currentSets=0;pr.repsPerSet=4;
-    alert("💪 Fase 2 completata! Aumenta il peso KB e ricomincia da 4 reps/set.");
+    showToast("💪 Fase 2 completata! Aumenta il peso KB","ok");
   }
   saveAxeProgress();
   state.tab="axe";
@@ -3539,7 +4902,7 @@ function setExtField(field,val){
 
 function saveExternalSession(){
   const ef=state.logExtForm;
-  if(!ef.duration){alert("Inserisci almeno la durata.");return;}
+  if(!ef.duration){showToast("⚠️ Inserisci almeno la durata","err");return;}
   const entry={
     type:ef.type||"Altro",
     date:new Date().toLocaleDateString("it-IT"),
@@ -3661,10 +5024,10 @@ function importJSON(){
         localStorage.setItem("kb-axe-history",JSON.stringify(state.axeHistory));
         localStorage.setItem("kb-axe-progress",JSON.stringify(state.axeProgress));
         if(state.activeProgram)localStorage.setItem("kb-active-program",JSON.stringify(state.activeProgram));
-        alert(`Import completato! ${state.history.length} sessioni totali.`);
+        showToast(`✅ Import completato — ${state.history.length} sessioni`,"ok");
         render();
       }catch(err){
-        alert("Errore nel file: "+err.message);
+        showToast("❌ Errore nel file: "+err.message,"err");
       }
     };
     reader.readAsText(file);
