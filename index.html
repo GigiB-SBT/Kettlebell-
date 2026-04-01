@@ -2029,6 +2029,14 @@ function renderAxeDone(){
   </div>`;
 }
 
+// ── RENDER PROGRAMS CONTENT (per uso nel tab PIANO) ───────────────────────────
+function renderProgramsContent(){
+  // Ritorna il contenuto di renderPrograms senza il wrapper <div class="screen">
+  const full=renderPrograms();
+  // Rimuove il primo <div class="screen"> e l'ultimo </div>
+  return full.replace(/^<div class="screen">/, '').replace(/<\/div>\s*$/, '');
+}
+
 // ── RENDER PROGRAMS ───────────────────────────────────────────────────────────
 // Helper: costruisce un tag HTML per i macro-tag senza backtick annidati
 function macroTagHTML(t){
@@ -4569,10 +4577,11 @@ function renderPlan(){
   const subTabs=[
     {id:"oggi",label:"Oggi"},
     {id:"settimana",label:"Settimana"},
+    {id:"programmi",label:"📋 Programmi"},
     {id:"config",label:"Config"},
   ];
-  const innerTabBar=`<div style="display:flex;gap:0;background:#080C0F;border-radius:10px;padding:3px;margin:0 16px 14px;">
-    ${subTabs.map(t=>`<button onclick="planSetSubTab('${t.id}')" style="flex:1;padding:8px 4px;border-radius:8px;font-size:12px;font-weight:700;background:${sub===t.id?'#0F1419':'transparent'};color:${sub===t.id?'#F0F4F8':'#607080'};border:none;cursor:pointer;">${t.label}</button>`).join("")}
+  const innerTabBar=`<div style="display:flex;gap:0;background:#080C0F;border-radius:10px;padding:3px;margin:0 16px 14px;overflow-x:auto;">
+    ${subTabs.map(t=>`<button onclick="planSetSubTab('${t.id}')" style="flex:1;min-width:0;white-space:nowrap;padding:8px 5px;border-radius:8px;font-size:11px;font-weight:700;background:${sub===t.id?'#0F1419':'transparent'};color:${sub===t.id?'#F0F4F8':'#607080'};border:none;cursor:pointer;">${t.label}</button>`).join("")}
   </div>`;
 
   return `<div class="screen">
@@ -4582,7 +4591,7 @@ function renderPlan(){
       <div style="font-size:13px;color:var(--muted);margin-top:5px;">Infrasettimanale flessibile · Weekend con anelli</div>
     </div>
     ${innerTabBar}
-    ${sub==="oggi"?tabOggi():sub==="settimana"?tabSettimana():tabConfig()}
+    ${sub==="oggi"?tabOggi():sub==="settimana"?tabSettimana():sub==="programmi"?renderProgramsContent():tabConfig()}
     ${navHTML("plan")}
   </div>`;
 }
@@ -5307,7 +5316,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v11';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v12';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
