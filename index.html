@@ -667,11 +667,11 @@ let state={
   // persistent
   history:JSON.parse(localStorage.getItem("kb-history-v2")||"[]"),
   externalHistory:JSON.parse(localStorage.getItem("kb-external-history")||"[]"),
-  statsFilter:"all",
+  statsFilter:"all",logSub:"sessioni",
   logExtForm:{type:"Calisthenics",duration:"",hrAvg:"",hrMax:"",feeling:null,notes:""},
   showExtForm:false,
   externalHistory:JSON.parse(localStorage.getItem("kb-external-history")||"[]"),
-  statsFilter:"all",
+  statsFilter:"all",logSub:"sessioni",
   logExtForm:{type:"Calisthenics",duration:"",hrAvg:"",hrMax:"",feeling:null,notes:""},
   showExtForm:false,
   axeHistory:JSON.parse(localStorage.getItem("kb-axe-history")||"[]"),
@@ -740,32 +740,28 @@ function ringHTML(total,remaining,color,countdown=false){
 
 function navHTML(active){
   const tabs=[
-    {id:"home",  icon:"home",          label:"Home"},
-    {id:"train", icon:"fitness_center", label:"Train"},
-    {id:"plan",  icon:"event_note",     label:"Piano"},
-    {id:"health",icon:"favorite",       label:"Salute"},
-    {id:"log",   icon:"query_stats",    label:"Stats"},
+    {id:"home",  icon:"home",          label:"HOME"},
+    {id:"train", icon:"fitness_center", label:"TRAIN"},
+    {id:"log",   icon:"query_stats",    label:"LOG"},
   ];
-  // Top navigation bar (Kinetic Prestige v2)
-  return `<nav class="flex justify-between items-center px-6 py-4 w-full bg-background fixed top-0 z-50 max-w-[480px]" style="left:50%;transform:translateX(-50%);border-bottom:0.5px solid rgba(255,255,255,0.06);">
-    <div class="flex items-center gap-3">
-      <div class="w-8 h-8 bg-surface-container overflow-hidden border border-outline-variant/20 flex-shrink-0">
-        <span class="material-symbols-outlined text-primary w-full text-center text-xl leading-8" style="font-variation-settings:'FILL' 1">person</span>
-      </div>
-      <span class="font-headline text-2xl tracking-widest text-primary">KINETIC</span>
+  return `<nav class="flex justify-between items-center px-5 py-3 w-full bg-background fixed top-0 z-50 max-w-[480px]"
+    style="left:50%;transform:translateX(-50%);border-bottom:0.5px solid rgba(255,255,255,0.07);">
+    <div class="flex items-center gap-2">
+      <img src="kb_trainer_icon_192.png" alt="KB Trainer" style="width:32px;height:32px;border-radius:6px;object-fit:cover;"/>
+      <span class="font-headline text-xl tracking-widest text-primary">KINETIC</span>
     </div>
     <div class="flex items-center gap-1">
       ${tabs.map(t=>`<button onclick="switchTab('${t.id}')"
-        class="flex flex-col items-center px-2 py-1 transition-all duration-150 active:scale-95 ${active===t.id?'text-primary':'text-gray-600 hover:text-gray-400'}"
-        style="${active===t.id?'border-bottom:2px solid #ffb693':'border-bottom:2px solid transparent'}">
-        <span class="material-symbols-outlined text-lg" style="${active===t.id?"font-variation-settings:'FILL' 1":""}">${t.icon}</span>
-        <span class="font-label text-[8px] font-bold tracking-tight uppercase mt-0.5">${t.label}</span>
+        class="flex flex-col items-center px-3 py-1.5 transition-all duration-150 active:scale-95 ${active===t.id?'text-primary':'text-gray-600 hover:text-gray-400'}"
+        style="border-bottom:2px solid ${active===t.id?'#ffb693':'transparent'}">
+        <span class="material-symbols-outlined text-xl leading-none" style="${active===t.id?"font-variation-settings:'FILL' 1":""}">${t.icon}</span>
+        <span class="font-label text-[8px] font-bold tracking-widest mt-0.5">${t.label}</span>
       </button>`).join("")}
     </div>
   </nav>`;
 }
 function switchTab(t){
-  if(t==="axe"||t==="extra") t="train";
+  if(t==="axe"||t==="extra"||t==="plan"||t==="health") t="train";
   state.tab=t;
   window.scrollTo(0,0);
   render();
@@ -900,139 +896,87 @@ function getSmartSuggestion(){
 
 // ── RENDER HOME ───────────────────────────────────────────────────────────────
 function renderHome(){
-  const suggested=getTodaySuggested();
-  const KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
-  const KPcls={A:"primary",B:"secondary",C:"tertiary"};
   const sug=getSmartSuggestion();
-  const sugHex=sug.color||"#ffb693";
+  const KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
+  const suggested=getTodaySuggested();
 
-  // Cards giorni A/B/C
-  const cards=Object.entries(DAYS).filter(([k])=>["A","B","C"].includes(k)).map(([key,day])=>{
-    const ap=state.activeProgram;
-    const isToday=suggested===key;
-    const todayDow=new Date().getDay();
-    const apToday=ap&&ap.days?ap.days.find(d=>d.d===todayDow&&d.act!=="—"):null;
-    const isApToday=ap&&apToday&&(apToday.act===key||apToday.act===key+"+");
+  const dayCards=Object.entries(DAYS).filter(([k])=>["A","B","C"].includes(k)).map(([key,day])=>{
     const accent=KPhex[key]||"#ffb693";
+    const isToday=suggested===key;
     return `<button onclick="startWorkout('${key}')"
-      class="relative bg-surface-container p-8 ghost-border group overflow-hidden text-left active:scale-95 transition-transform"
-      style="${isToday||isApToday?`border-left:2px solid ${accent}`:''}">
+      class="relative bg-surface-container ghost-border p-6 text-left group overflow-hidden active:scale-95 transition-transform"
+      style="${isToday?`border-left:2px solid ${accent}`:''}">
       <div class="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
-        style="background:radial-gradient(ellipse at top right,${accent}12,transparent 70%)"></div>
-      ${isToday||isApToday?`<span class="absolute top-3 right-3 font-label text-[9px] font-bold tracking-widest uppercase" style="color:${accent}">OGGI</span>`:''}
-      <div class="font-headline text-5xl leading-none tracking-tight mb-6" style="color:${accent}">GG ${key}</div>
-      <div class="space-y-1">
-        <h3 class="font-label text-sm font-bold uppercase tracking-wide">${day.subtitle}</h3>
-        <p class="text-on-surface-variant text-xs">${day.focus}</p>
-        <div class="flex justify-between items-center pt-4 border-t border-white/5">
-          <span class="font-label text-[10px] uppercase font-bold text-gray-500">~${day.totalMin} MIN</span>
-          <span class="material-symbols-outlined text-gray-600 group-hover:translate-x-1 transition-transform" style="color:${isToday||isApToday?accent:''}">arrow_forward</span>
-        </div>
+        style="background:radial-gradient(ellipse at top right,${accent}14,transparent 70%)"></div>
+      ${isToday?`<span class="absolute top-2 right-3 font-label text-[8px] font-bold tracking-widest uppercase" style="color:${accent}">OGGI</span>`:''}
+      <div class="font-headline text-4xl leading-none mb-3" style="color:${accent}">GG ${key}</div>
+      <div class="font-label text-[10px] font-bold uppercase tracking-wide text-gray-400">${day.subtitle}</div>
+      <div class="font-label text-[9px] text-gray-600 mt-1">${day.focus}</div>
+      <div class="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
+        <span class="font-label text-[9px] uppercase text-gray-600">~${day.totalMin} min</span>
+        <span class="material-symbols-outlined text-sm text-gray-700 group-hover:translate-x-0.5 transition-transform" style="color:${isToday?accent:''}">arrow_forward</span>
       </div>
     </button>`;
   }).join("");
 
-  // Active program banner
-  let apBanner="";
-  if(state.activeProgram){
-    const ap=state.activeProgram;
-    const DAYS_IT=["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
-    const chips=ap.days?.filter(d=>d.act!=="—").map(d=>`<span class="border-l-2 bg-surface-container-high px-3 py-1 font-label text-[10px] font-bold tracking-widest uppercase" style="border-color:${d.col};color:${d.col}">${DAYS_IT[d.d]} ${d.act}</span>`).join("")||"";
-    apBanner=`<section class="bg-surface-container ghost-border p-6 relative border-l-2 border-l-tertiary">
-      <div class="flex justify-between items-start mb-3">
-        <div>
-          <p class="font-label text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-1">Active Program</p>
-          <h3 class="font-headline text-3xl leading-none">${ap.emoji} ${ap.title}</h3>
-        </div>
-        <button onclick="deactivateProgram()" class="font-label text-[10px] font-bold text-error uppercase tracking-widest border-b border-error/30">Disattiva</button>
-      </div>
-      <div class="flex gap-2 flex-wrap">${chips}</div>
-    </section>`;
-  }
-
-  // Recovery + Suggestion bento (ispirato a home_v2)
-  const sugCard=`<section class="grid grid-cols-1 gap-0">
-    <div class="bg-surface-container p-8 ghost-border border-l-2 relative overflow-hidden" style="border-left-color:${sugHex}">
-      <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-        <span class="material-symbols-outlined text-[120px]" style="color:${sugHex}">query_stats</span>
-      </div>
-      <div class="flex justify-between items-start mb-8">
-        <div>
-          <p class="font-label text-xs uppercase tracking-[0.2em] text-gray-500 mb-1">Prossima Sessione</p>
-          <div class="flex items-center gap-2">
-            <span class="font-headline text-4xl" style="color:${sugHex}">${sug.icon} ${sug.title}</span>
-          </div>
-        </div>
-      </div>
-      <p class="text-on-surface-variant text-sm leading-relaxed max-w-xs mb-8">${sug.reason}</p>
-      ${sug.action?`<button onclick="${sug.action}"
-        class="bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed px-8 py-4 font-headline text-xl tracking-widest hover:scale-[0.98] transition-transform flex items-center gap-3 active:scale-95">
-        ${sug.actionLabel}
-        <span class="material-symbols-outlined">bolt</span>
-      </button>`:""}
-    </div>
-  </section>`;
-
-  // Recent sessions
   const allRecent=[
-    ...state.history.map(h=>({...h,_type:"kb"})),
-    ...state.axeHistory.map(h=>({...h,_type:"axe",day:"AXE"})),
+    ...state.history.map(h=>({...h,_t:"kb"})),
+    ...(state.axeHistory||[]).map(h=>({...h,_t:"axe",day:"AXE"})),
   ].slice(-4).reverse();
-  const recentRows=allRecent.map(h=>{
-    const col=h._type==="axe"?"#8b5cf6":(KPhex[h.day]||"#ffb693");
-    const label=h._type==="axe"?`AXE — ${h.sets||'?'} set`:h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):`Giorno ${h.day}`;
-    const info=h._type==="axe"?`${h.date||''}${h.talkTest==='ok'?' • ✅':''}`:`${h.date||''}${h.duration?' • '+h.duration+"'":''}`;
-    return `<div class="flex items-center gap-6 p-5 bg-surface-container hover:bg-surface-container-high transition-colors group">
-      <div class="w-10 h-10 flex items-center justify-center bg-surface-container-low border border-outline-variant/10 flex-shrink-0">
-        <span class="material-symbols-outlined text-sm" style="color:${col}">fitness_center</span>
-      </div>
-      <div class="flex-1 min-w-0">
-        <p class="font-headline text-xl leading-none mb-1 group-hover:opacity-80 transition-opacity" style="color:${col}">${label.toUpperCase()}</p>
-        <p class="font-label text-[10px] text-gray-500 uppercase tracking-tighter">${info}</p>
-      </div>
-      <div class="text-right flex-shrink-0">
-        <p class="font-headline text-xl">${h.duration||''} ${h.duration?'MIN':''}</p>
-        ${h.feeling?`<p class="font-label text-[9px] text-gray-500 uppercase">${{' 😫':'PESANTE','😐':'NORMALE','💪':'BENE','🔥':'OTTIMO'}[h.feeling]||''}</p>`:''}
-      </div>
-    </div>`;
-  }).join("");
 
-  return `<div class="screen bg-background" style="padding-top:64px;">
-    <main class="px-6 pt-8 pb-10 max-w-xl mx-auto space-y-10">
+  const recentHTML=allRecent.length?`
+    <section>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-headline text-2xl tracking-wide">ULTIME SESSIONI</h3>
+        <button onclick="switchTab('log')" class="font-label text-[10px] text-primary uppercase tracking-widest">Vedi tutto</button>
+      </div>
+      <div class="space-y-1">
+        ${allRecent.map(h=>{
+          const col=h._t==="axe"?"#8b5cf6":(KPhex[h.day]||"#ffb693");
+          const label=h._t==="axe"?`AXE — ${h.sets||'?'} set`:h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):`Giorno ${h.day}`;
+          return `<div class="flex items-center gap-4 p-4 bg-surface-container ghost-border hover:bg-surface-container-high transition-colors group">
+            <div class="w-1 self-stretch rounded-full flex-shrink-0" style="background:${col}"></div>
+            <div class="flex-1 min-w-0">
+              <p class="font-headline text-lg leading-none" style="color:${col}">${label.toUpperCase()}</p>
+              <p class="font-label text-[9px] text-gray-500 mt-1">${h.date||''}${h.duration?' · '+h.duration+"'":''}${h.feeling?' · '+h.feeling:''}</p>
+            </div>
+            ${h.hrAvg?`<span class="font-headline text-base text-gray-600">❤️ ${h.hrAvg}</span>`:''}
+          </div>`;
+        }).join("")}
+      </div>
+    </section>`:"";
 
-      <!-- High-impact header -->
-      <section class="relative">
-        <div class="inline-block relative">
-          <h2 class="font-headline text-7xl tracking-tight leading-none">PROSSIMA<br/>SESSIONE</h2>
-          <div class="absolute -bottom-2 left-0 w-24 h-1.5 bg-primary"></div>
+  return `<div class="screen bg-background" style="padding-top:56px;">
+    <main class="px-5 pt-8 pb-12 space-y-8">
+
+      <!-- Suggestion card -->
+      <section class="bg-surface-container ghost-border p-7 relative overflow-hidden border-l-2" style="border-left-color:${sug.color||'#ffb693'}">
+        <div class="absolute top-0 right-0 w-32 h-full pointer-events-none opacity-5">
+          <span class="material-symbols-outlined" style="font-size:120px;color:${sug.color||'#ffb693'}">fitness_center</span>
         </div>
-        <div class="mt-6 flex items-center gap-4">
-          <span class="font-headline text-2xl text-secondary tracking-widest">${dayLabel().toUpperCase()}</span>
-          <span class="flex-grow h-px bg-outline-variant/20"></span>
+        <p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-3">Prossima sessione suggerita</p>
+        <div class="flex items-center gap-3 mb-4">
+          <span style="font-size:28px">${sug.icon}</span>
+          <h2 class="font-headline text-3xl leading-none" style="color:${sug.color||'#ffb693'}">${sug.title.toUpperCase()}</h2>
         </div>
+        <p class="font-label text-sm text-on-surface-variant leading-relaxed mb-6">${sug.reason}</p>
+        ${sug.action?`<button onclick="${sug.action}"
+          class="bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed px-7 py-3.5 font-headline text-xl tracking-widest flex items-center gap-3 active:scale-95 transition-transform">
+          ${sug.actionLabel}
+          <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">bolt</span>
+        </button>`:''}
       </section>
 
-      <!-- Bento grid suggestion + program -->
-      ${apBanner}
-      ${sugCard}
-
-      <!-- Day selection grid -->
+      <!-- Giorni A/B/C -->
       <section>
-        <div class="flex justify-between items-end mb-4">
-          <h3 class="font-headline text-3xl tracking-wide">SELEZIONA FASE</h3>
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-headline text-2xl tracking-wide">SELEZIONA FASE</h3>
+          <span class="font-label text-[9px] text-gray-600 uppercase tracking-widest">${dayLabel()}</span>
         </div>
-        <div class="grid grid-cols-3 gap-3">${cards}</div>
+        <div class="grid grid-cols-3 gap-3">${dayCards}</div>
       </section>
 
-      <!-- Recent logs -->
-      ${allRecent.length?`<section>
-        <div class="flex justify-between items-center mb-4">
-          <h4 class="font-headline text-3xl tracking-wide">ULTIME SESSIONI</h4>
-          <button onclick="switchTab('log')" class="font-label text-xs text-primary uppercase tracking-widest hover:underline">Vedi tutto</button>
-        </div>
-        <div class="space-y-1 ghost-border">${recentRows}</div>
-      </section>`:""}
-
+      ${recentHTML}
     </main>
     ${navHTML("home")}
   </div>`;
@@ -1050,127 +994,117 @@ function renderWorkout(){
   const countdown=hasTimer&&state.remaining<=3&&state.remaining>0&&state.timerRunning;
   const KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
   const accentHex=isRest?"#50dad1":isAmrap?"#e9c176":(KPhex[state.dayKey]||day.color||"#ffb693");
-  const repsLabel=step.repsOverride||ex.reps||"—";
-  const progress=(state.stepIdx/seq.length*100).toFixed(1);
+  const repsLabel=step.repsOverride||ex.reps||"";
+  const progress=Math.round(state.stepIdx/seq.length*100);
 
-  // Timer SVG ring (stile workout_session_v2 — grande e centrato)
-  let timerSection="";
+  // Ring timer SVG — grande, leggibile da terra
+  let timerEl="";
   if(hasTimer){
-    const r=46, circ=2*Math.PI*r;
+    const r=44, circ=2*Math.PI*r;
     const pct=step.timerSec>0?state.remaining/step.timerSec:1;
     const dash=circ*pct;
-    const glow=countdown?"drop-shadow(0 0 20px rgba(255,180,171,0.4))":"drop-shadow(0 0 15px "+accentHex+"33)";
-    timerSection=`<section class="relative flex flex-col items-center mb-8">
-      <div class="relative w-72 h-72 flex items-center justify-center">
-        <div class="absolute inset-0 rounded-full pointer-events-none" style="background:radial-gradient(circle,${accentHex}08,transparent 70%)"></div>
-        <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100" style="filter:${glow}">
-          <circle class="text-surface-container-highest" cx="50" cy="50" fill="none" r="${r}" stroke="currentColor" stroke-width="1.5"/>
-          <circle cx="50" cy="50" fill="none" r="${r}" stroke="${countdown?'#ffb4ab':accentHex}" stroke-dasharray="${dash} ${circ}" stroke-dashoffset="0" stroke-linecap="square" stroke-width="3" style="transition:stroke-dasharray 0.45s ease"/>
-        </svg>
-        <div class="flex flex-col items-center text-center">
-          <span id="timer-display" class="font-headline leading-none" style="font-size:${countdown?'90px':'100px'};color:${countdown?'#ffb4ab':accentHex}">${fmtTime(state.remaining)}</span>
-          <span class="font-headline text-xl tracking-[0.2em] text-on-surface-variant mt-1">${isRest?'RECUPERO':repsLabel}</span>
-        </div>
+    const glowColor=countdown?"#ffb4ab":accentHex;
+    timerEl=`<div class="relative flex items-center justify-center" style="width:280px;height:280px">
+      <div class="absolute inset-0 rounded-full pointer-events-none" style="background:radial-gradient(circle,${accentHex}0a,transparent 65%)"></div>
+      <svg class="absolute inset-0 w-full h-full" style="transform:rotate(-90deg)" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" fill="none" r="${r}" stroke="#1C2530" stroke-width="2"/>
+        <circle cx="50" cy="50" fill="none" r="${r}"
+          stroke="${glowColor}" stroke-dasharray="${dash} ${circ}"
+          stroke-linecap="square" stroke-width="3"
+          style="transition:stroke-dasharray 0.4s ease;filter:drop-shadow(0 0 6px ${glowColor}55)"/>
+      </svg>
+      <div class="flex flex-col items-center text-center relative z-10">
+        <span id="timer-display" class="font-headline leading-none" style="font-size:88px;color:${glowColor};line-height:1">${fmtTime(state.remaining)}</span>
+        <span class="font-headline text-lg tracking-widest mt-1" style="color:${glowColor}88">${isRest?"RECUPERO":repsLabel||"SEC"}</span>
       </div>
-      <div class="mt-6 px-6 py-2 bg-surface-container-low border-b-2" style="border-color:${accentHex}">
-        <span class="font-label uppercase text-xs tracking-widest font-bold">Step ${state.stepIdx+1} • ${seq.length} totali</span>
-      </div>
-    </section>`;
+    </div>`;
   } else {
-    timerSection=`<section class="flex flex-col items-center mb-8">
-      <div class="w-48 h-48 flex items-center justify-center border border-outline-variant/20 relative">
-        <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(circle,${accentHex}08,transparent 70%)"></div>
-        <div class="text-center">
-          <div class="font-headline text-6xl" style="color:${accentHex}">${repsLabel.split(' ')[0]||'—'}</div>
-          <div class="font-label text-[10px] text-gray-500 uppercase tracking-widest mt-1">${repsLabel.includes(' ')?repsLabel.split(' ').slice(1).join(' '):'REPS'}</div>
-        </div>
+    timerEl=`<div class="flex items-center justify-center" style="width:280px;height:280px">
+      <div class="relative border-2 flex flex-col items-center justify-center" style="width:220px;height:220px;border-color:${accentHex}44;background:radial-gradient(circle,${accentHex}0a,transparent)">
+        <span class="font-headline leading-none text-center px-4" style="font-size:${repsLabel.length>8?'32px':'48px'};color:${accentHex}">${repsLabel||"✋"}</span>
+        <span class="font-label text-[10px] uppercase tracking-widest text-gray-600 mt-2">REPS</span>
       </div>
-    </section>`;
+    </div>`;
   }
 
-  // Ladder
+  // Prossimo esercizio
+  const nextStep_=seq[state.stepIdx+1];
+  const nextUpBar=(!isLast&&nextStep_)?`<div class="flex justify-between items-center px-6 py-3 border-t border-white/5" style="background:#0C1017">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined text-gray-600 text-sm">skip_next</span>
+      <span class="font-label text-[9px] uppercase font-bold tracking-widest text-gray-600">Prossimo</span>
+    </div>
+    <span class="font-headline text-xl tracking-wide" style="color:${accentHex}88">${nextStep_.name.toUpperCase()}</span>
+  </div>`:"";
+
+  // Cue coach
+  const coachCue=ex.cue?`<div class="mx-5 mb-3 bg-surface-container p-5 border-l-2 flex items-start gap-3" style="border-color:${accentHex}">
+    <span class="material-symbols-outlined text-lg flex-shrink-0 mt-0.5" style="color:${accentHex};font-variation-settings:'FILL' 1">tips_and_updates</span>
+    <p class="font-body italic text-base text-on-surface leading-relaxed">"${ex.cue}"</p>
+  </div>`:"";
+
+  // Ladder pillole
   let ladderHTML="";
   if(step.type==="ladder"&&step.name==="Clean"){
     const pills=[1,2,3,4,5,4,3,2,1].map(n=>{
       const a=n===step.ladderN;
-      return `<div class="w-9 h-9 flex items-center justify-center border font-headline text-lg transition-all"
+      return `<div class="w-10 h-10 flex items-center justify-center border font-headline text-xl"
         style="background:${a?accentHex:'transparent'};border-color:${a?accentHex:'rgba(90,65,54,0.3)'};color:${a?'#000':'#64748b'}">${n}</div>`;
     }).join("");
-    ladderHTML=`<div class="mx-6 mb-4 bg-surface-container-low p-4 border-l-2" style="border-color:${accentHex}">
-      <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-3">SCALA — SX → DX → Clean+Squat+Press</p>
-      <div class="flex gap-2 flex-wrap">${pills}</div>
+    ladderHTML=`<div class="mx-5 mb-3 bg-surface-container-low p-4 border-l-2" style="border-color:${accentHex}">
+      <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-3">SCALA — Clean+Squat+Press SX→DX</p>
+      <div class="flex gap-2">${pills}</div>
     </div>`;
   }
 
-  // YouTube embed
-  function ytIdFromUrl(url){if(!url)return null;const m=url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null;}
-  const ytId=(!isRest&&ex.yt)?ytIdFromUrl(ex.yt):null;
-  const ytCard=ytId?`<div class="mx-6 mb-4 bg-surface-container border-l-2 border-l-secondary overflow-hidden" style="position:relative;padding-bottom:40%;height:0">
-    <iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=1&modestbranding=1&rel=0&playsinline=1"
+  // AMRAP
+  const amrapCard=isAmrap?`<div class="mx-5 mb-3 bg-surface-container p-4 border-l-2 border-l-secondary">
+    <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">Schema AMRAP</p>
+    <p class="font-headline text-xl text-secondary">15 KB Swing + 12 Push-up</p>
+  </div>`:"";
+
+  // YouTube embed compatto
+  function ytId(url){if(!url)return null;const m=url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null;}
+  const vid=(!isRest&&ex.yt)?ytId(ex.yt):null;
+  const ytCard=vid?`<div class="mx-5 mb-3 overflow-hidden border-l-2 border-l-secondary" style="position:relative;padding-bottom:35%;height:0">
+    <iframe src="https://www.youtube.com/embed/${vid}?autoplay=1&mute=1&loop=1&playlist=${vid}&controls=1&modestbranding=1&rel=0&playsinline=1"
       style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
       allow="autoplay;encrypted-media" allowfullscreen></iframe>
   </div>`:"";
 
-  // Next up
-  const nextStep_=seq[state.stepIdx+1];
-  const nextUpBar=(!isLast&&nextStep_)?`<div class="bg-surface-container-highest/50 px-6 py-3 flex justify-between items-center border-t border-white/5 mx-0">
-    <div class="flex items-center gap-3">
-      <span class="material-symbols-outlined text-on-surface-variant text-sm">skip_next</span>
-      <span class="font-label text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">PROSSIMO</span>
-    </div>
-    <span class="font-headline text-xl tracking-wide text-secondary">${nextStep_.name.toUpperCase()} ${nextStep_.repsOverride||EXERCISES[nextStep_.name]?.reps||''}</span>
-  </div>`:"";
+  return `<div class="screen bg-background" style="overflow:hidden;padding-top:0">
 
-  // Coach cue
-  const coachCue=ex.cue?`<div class="mx-6 mb-4 bg-surface-container p-6 border-l-2" style="border-color:${accentHex}">
-    <div class="flex items-start gap-4">
-      <span class="material-symbols-outlined mt-1" style="color:${accentHex};font-variation-settings:'FILL' 1">tips_and_updates</span>
-      <div>
-        <h4 class="font-label text-[10px] uppercase font-bold tracking-tighter text-on-surface-variant mb-1">COACH CUE</h4>
-        <p class="font-body italic text-base text-on-surface leading-relaxed">"${ex.cue}"</p>
+    <!-- Header immersivo -->
+    <header class="fixed top-0 w-full z-50 max-w-[480px]" style="left:50%;transform:translateX(-50%);background:linear-gradient(to bottom,#090C0F 60%,transparent)">
+      <div class="flex justify-between items-center px-5 pt-6 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+          <span class="font-headline text-lg tracking-widest text-primary">SESSION ACTIVE</span>
+        </div>
+        <button onclick="exitWorkout()" class="w-9 h-9 flex items-center justify-center bg-surface-container-high active:scale-90 transition-transform">
+          <span class="material-symbols-outlined text-on-surface text-lg">close</span>
+        </button>
       </div>
-    </div>
-  </div>`:"";
-
-  // AMRAP card
-  const amrapCard=isAmrap?`<div class="mx-6 mb-4 bg-surface-container p-5 border-l-2 border-l-secondary">
-    <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">Schema AMRAP</p>
-    <p class="font-headline text-xl text-secondary">15 KB Swing + 12 Push-up</p>
-    <p class="font-label text-xs text-gray-500 mt-1">Conteggia i round completati</p>
-  </div>`:"";
-
-  return `<div class="screen bg-background" style="overflow:hidden">
-    <!-- Header minimale — sessione immersiva -->
-    <header class="flex justify-between items-center px-6 py-6 w-full fixed top-0 z-50 max-w-[480px]" style="left:50%;transform:translateX(-50%);background:linear-gradient(to bottom,#090C0F,transparent)">
-      <div class="flex items-center gap-3">
-        <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-        <span class="font-headline text-xl tracking-widest text-primary">SESSION ACTIVE</span>
+      <!-- Progress bar 2px -->
+      <div class="w-full h-0.5 bg-surface-container-high">
+        <div style="height:100%;width:${progress}%;background:${accentHex};transition:width 0.4s;box-shadow:0 0 6px ${accentHex}88"></div>
       </div>
-      <button onclick="exitWorkout()" class="w-10 h-10 flex items-center justify-center bg-surface-container-high hover:bg-surface-variant transition-colors">
-        <span class="material-symbols-outlined text-on-surface">close</span>
-      </button>
     </header>
 
-    <main class="h-screen w-full flex flex-col overflow-y-auto no-scrollbar pt-24 pb-40">
-      <!-- Ambient glow bg -->
-      <div class="absolute inset-0 pointer-events-none overflow-hidden">
-        <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full blur-[120px]" style="background:${accentHex}08"></div>
+    <main class="flex flex-col items-center w-full overflow-y-auto no-scrollbar" style="min-height:100vh;padding-top:72px;padding-bottom:140px">
+      <!-- Glow ambiente -->
+      <div class="absolute inset-0 pointer-events-none overflow-hidden" style="z-index:0">
+        <div class="absolute rounded-full blur-[100px]" style="top:20%;left:50%;transform:translateX(-50%);width:300px;height:300px;background:${accentHex}08"></div>
       </div>
 
-      <!-- Progress bar sottile top -->
-      <div class="fixed top-0 left-0 w-full h-0.5 z-40 max-w-[480px]" style="left:50%;transform:translateX(-50%)">
-        <div style="height:100%;width:${progress}%;background:${accentHex};transition:width 0.4s;box-shadow:0 0 8px ${accentHex}88"></div>
+      <!-- Nome esercizio — grande, leggibile da terra -->
+      <div class="text-center px-6 mb-6 relative z-10 w-full">
+        <p class="font-label text-[9px] uppercase tracking-[0.25em] text-gray-600 mb-3">${isRest?'RECUPERO':isAmrap?'AMRAP':'ESERCIZIO · Step '+( state.stepIdx+1)+'/'+seq.length}</p>
+        <h2 class="font-headline leading-none tracking-tight" style="font-size:${step.name.length>12?'44px':step.name.length>8?'56px':'68px'};color:${isRest?'#50dad1':'#e1e2e7'}">${step.name.toUpperCase()}</h2>
       </div>
 
-      <!-- Exercise name -->
-      <div class="text-center px-6 mb-4 relative z-10">
-        <p class="font-label text-[10px] uppercase tracking-widest text-gray-500 mb-2">${isRest?'RECUPERO':isAmrap?'AMRAP':'ESERCIZIO CORRENTE'}</p>
-        <h2 class="font-headline leading-none tracking-tight" style="font-size:${step.name.length>14?'36px':step.name.length>10?'48px':'60px'};color:${isRest?'#50dad1':'#e1e2e7'}">${step.name.toUpperCase()}</h2>
-        ${isAmrap?'<p class="font-headline text-secondary text-sm tracking-widest mt-1">AS MANY ROUNDS AS POSSIBLE</p>':""}
-      </div>
-
-      <!-- Timer ring centrale -->
-      <div class="relative z-10">${timerSection}</div>
+      <!-- Ring timer centrale -->
+      <div class="relative z-10 mb-6">${timerEl}</div>
 
       ${amrapCard}
       ${coachCue}
@@ -1178,31 +1112,38 @@ function renderWorkout(){
       ${ladderHTML}
     </main>
 
-    <!-- Bottom footer con controlli (stile workout_session_v2) -->
-    <footer class="fixed bottom-0 w-full z-50 max-w-[480px]" style="left:50%;transform:translateX(-50%);background:#0C1017;box-shadow:0 -10px 40px rgba(0,0,0,0.6)">
+    <!-- Footer controlli fisso -->
+    <footer class="fixed bottom-0 w-full z-50 max-w-[480px]" style="left:50%;transform:translateX(-50%);background:#0C1017;box-shadow:0 -8px 32px rgba(0,0,0,0.7)">
       ${nextUpBar}
-      <div class="h-24 px-6 flex items-center justify-between">
-        <button onclick="resetTimer()" class="flex flex-col items-center gap-1 group">
-          <div class="w-12 h-12 bg-surface-container-high flex items-center justify-center text-gray-500 group-hover:text-white transition-colors">
-            <span class="material-symbols-outlined">replay</span>
+      <div class="flex items-center justify-between px-8 py-4" style="height:90px">
+
+        <!-- RESET -->
+        <button onclick="resetTimer()" class="flex flex-col items-center gap-1 active:scale-90 transition-transform">
+          <div class="w-12 h-12 bg-surface-container-high flex items-center justify-center">
+            <span class="material-symbols-outlined text-gray-500">replay</span>
           </div>
-          <span class="font-label text-[9px] uppercase font-bold tracking-tighter text-gray-500">RESET</span>
+          <span class="font-label text-[8px] uppercase font-bold text-gray-600">RESET</span>
         </button>
+
+        <!-- PLAY/PAUSE centrale grande -->
         ${hasTimer?`<button id="btn-startstop" onclick="toggleTimer()"
-          class="w-20 h-20 -mt-10 flex items-center justify-center shadow-lg active:scale-95 transition-transform rounded-sm"
-          style="background:${state.timerRunning?'linear-gradient(135deg,#93000a,#69000a)':'linear-gradient(135deg,'+accentHex+','+accentHex+'cc)'};color:${state.timerRunning?'#ffb4ab':'#000'};box-shadow:0 10px 30px ${accentHex}44">
+          class="flex items-center justify-center active:scale-90 transition-transform"
+          style="width:72px;height:72px;margin-top:-16px;background:${state.timerRunning?'linear-gradient(135deg,#690005,#93000a)':'linear-gradient(135deg,'+accentHex+','+accentHex+'cc)'};box-shadow:0 8px 24px ${accentHex}55;color:${state.timerRunning?'#ffb4ab':'#000'}">
           <span class="material-symbols-outlined text-4xl" style="font-variation-settings:'FILL' 1">${state.timerRunning?"pause":"play_arrow"}</span>
         </button>`:`<button onclick="nextStep()"
-          class="w-20 h-20 -mt-10 flex items-center justify-center shadow-lg active:scale-95 transition-transform rounded-sm"
-          style="background:linear-gradient(135deg,${accentHex},${accentHex}cc);color:#000;box-shadow:0 10px 30px ${accentHex}44">
+          class="flex items-center justify-center active:scale-90 transition-transform"
+          style="width:72px;height:72px;margin-top:-16px;background:linear-gradient(135deg,${accentHex},${accentHex}cc);box-shadow:0 8px 24px ${accentHex}55;color:#000">
           <span class="material-symbols-outlined text-4xl" style="font-variation-settings:'FILL' 1">check</span>
         </button>`}
-        <button onclick="${isLast?'nextStep()':'nextStep()'}" class="flex flex-col items-center gap-1 group">
-          <div class="w-12 h-12 bg-surface-container-high flex items-center justify-center group-hover:text-white transition-colors" style="color:${isLast?accentHex:'#64748b'}">
-            <span class="material-symbols-outlined">${isLast?"flag":"skip_next"}</span>
+
+        <!-- AVANTI/FINE -->
+        <button onclick="nextStep()" class="flex flex-col items-center gap-1 active:scale-90 transition-transform">
+          <div class="w-12 h-12 flex items-center justify-center" style="background:${isLast?accentHex+'22':'#272a2e'};border:1px solid ${isLast?accentHex+'66':'transparent'}">
+            <span class="material-symbols-outlined" style="color:${isLast?accentHex:'#64748b'}">${isLast?"flag":"skip_next"}</span>
           </div>
-          <span class="font-label text-[9px] uppercase font-bold tracking-tighter" style="color:${isLast?accentHex:'#64748b'}">${isLast?"FINE":"SKIP"}</span>
+          <span class="font-label text-[8px] uppercase font-bold" style="color:${isLast?accentHex:'#64748b'}">${isLast?"FINE":"SKIP"}</span>
         </button>
+
       </div>
     </footer>
   </div>`;
@@ -1333,259 +1274,319 @@ function renderDone(){
 
 // ── RENDER LOG ────────────────────────────────────────────────────────────────
 function renderLog(){
-  const filter=state.statsFilter;
-  const hist=state.history;
-  const extHist=state.externalHistory;
+  const logSub=state.logSub||"sessioni";
+  const hist=state.history||[];
+  const extHist=state.externalHistory||[];
   const axeHist=state.axeHistory||[];
+  const filter=state.statsFilter||"all";
 
-  const allSessions=[
-    ...hist.map(h=>({...h,_src:"kb"})),
-    ...extHist.map(h=>({...h,_src:"ext"}))
-  ].sort((a,b)=>{
-    const parse=s=>{const[d,m,y]=s.date.split("/").map(Number);return new Date(y,m-1,d);};
-    return parse(b)-parse(a);
-  });
-  const visibleSessions=filter==="kb"?allSessions.filter(h=>h._src==="kb")
-    :filter==="external"?allSessions.filter(h=>h._src==="ext")
-    :allSessions;
+  // ── SUB-NAV ──
+  const logTabs=[
+    {id:"sessioni",label:"Sessioni"},
+    {id:"stats",   label:"Stats"},
+    {id:"salute",  label:"Salute"},
+  ];
+  const subNav=`<div class="flex gap-2 mb-8">
+    ${logTabs.map(t=>`<button onclick="state.logSub='${t.id}';render()"
+      class="flex-1 py-2.5 font-headline text-base tracking-widest uppercase active:scale-95 transition-transform"
+      style="${logSub===t.id?'background:#ffb693;color:#351000':'border:1px solid rgba(90,65,54,0.4);color:#64748b;background:transparent'}">${t.label}</button>`).join("")}
+  </div>`;
 
-  const now=new Date();
-  const allForKPI=[...hist,...extHist];
-  const totalSessions=allForKPI.length;
-  const totalMins=allForKPI.reduce((s,h)=>s+(h.duration||0),0);
-  const totalAxeSets=axeHist.reduce((s,h)=>s+(h.sets||0),0);
+  // ══ SESSIONI ══
+  function tabSessioni(){
+    const allSessions=[
+      ...hist.map(h=>({...h,_src:"kb"})),
+      ...extHist.map(h=>({...h,_src:"ext"})),
+    ].sort((a,b)=>{
+      const p=s=>{try{const[d,m,y]=s.date.split("/").map(Number);return new Date(y,m-1,d);}catch(e){return new Date(0);}};
+      return p(b)-p(a);
+    });
+    const visible=filter==="kb"?allSessions.filter(h=>h._src==="kb"):filter==="external"?allSessions.filter(h=>h._src==="ext"):allSessions;
+    const KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
+    const EXT_C={"Calisthenics":"#50dad1","Corsa":"#ffb693","Yoga":"#8b5cf6","Ciclismo":"#e9c176","Nuoto":"#06b6d4","Calcio":"#22c55e","Altro":"#64748b"};
 
-  // Streak
-  function getWeekNum(dateStr){
-    try{const[d,m,y]=dateStr.split("/").map(Number);const dt=new Date(y,m-1,d);return Math.floor((now-dt)/(1000*60*60*24*7));}catch(e){return 99;}
-  }
-  const weekCounts=[0,0,0,0,0,0,0];
-  const dow=["LUN","MAR","MER","GIO","VEN","SAB","DOM"];
-  allForKPI.forEach(h=>{
-    try{const[d,m,y]=h.date.split("/").map(Number);const dt=new Date(y,m-1,d);
-    const diff=Math.floor((now-dt)/(1000*60*60*24));
-    if(diff>=0&&diff<7)weekCounts[6-diff]++;}catch(e){}
-  });
-  const maxWC=Math.max(...weekCounts,1);
-
-  // Distribution
-  const dist={A:0,B:0,C:0,BP:0,AXE:axeHist.length};
-  hist.forEach(h=>{
-    if(["A","B","C"].includes(h.day))dist[h.day]++;
-    else if(h.day&&h.day.startsWith("extra_BP"))dist.BP++;
-  });
-
-  const avgDur=hist.length?Math.round(hist.reduce((s,h)=>s+(h.duration||0),0)/hist.length):0;
-  const hrData=hist.filter(h=>h.hrAvg).slice(-8);
-  const avgHR=hrData.length?Math.round(hrData.reduce((s,h)=>s+Number(h.hrAvg),0)/hrData.length):null;
-
-  // Weekly bar chart
-  const maxH=48;
-  const weekBarsHTML=weekCounts.map((c,i)=>{
-    const h=c>0?Math.round((c/maxWC)*maxH)+4:4;
-    const isToday=i===6;
-    return `<div class="flex-1 flex flex-col items-center gap-2">
-      <div class="w-full bg-surface-container-low relative" style="height:${maxH}px">
-        <div class="absolute bottom-0 left-0 right-0 ${isToday?'bg-primary':'bg-primary/40'}" style="height:${h}px;${c>0?'box-shadow:0 0 8px rgba(255,182,147,0.3)':''}"></div>
-      </div>
-      <span class="font-headline text-[9px] text-slate-500">${dow[i]}</span>
+    const filterBar=`<div class="flex gap-2 mb-5">
+      ${[{id:"all",l:"Tutti"},{id:"kb",l:"KB"},{id:"external",l:"Altri"}].map(f=>`<button onclick="setStatsFilter('${f.id}')"
+        class="px-4 py-1.5 font-label text-[10px] font-bold tracking-widest uppercase transition-all"
+        style="border-radius:2px;background:${filter===f.id?'#ffb693':'transparent'};border:1px solid ${filter===f.id?'#ffb693':'rgba(90,65,54,0.4)'};color:${filter===f.id?'#351000':'#64748b'}">${f.l}</button>`).join("")}
+      <button onclick="state.showExtForm=!state.showExtForm;render()"
+        class="ml-auto px-4 py-1.5 font-label text-[10px] font-bold tracking-widest uppercase transition-all"
+        style="border-radius:2px;border:1px solid rgba(80,218,209,0.4);color:#50dad1;background:transparent">
+        ${state.showExtForm?"✕ Chiudi":"+ Aggiungi"}
+      </button>
     </div>`;
-  }).join("");
 
-  // Session list
-  const EXT_COLORS={"Calisthenics":"#50dad1","Corsa":"#ffb693","Yoga":"#8b5cf6","Ciclismo":"#e9c176","Nuoto":"#06b6d4","Calcio":"#22c55e","Altro":"#64748b"};
-  const feelLabel={"😫":"PESANTE","😐":"NORMALE","💪":"BENE","🔥":"OTTIMO"};
-
-  const sessionListHTML=visibleSessions.length===0
-    ?`<div class="flex flex-col items-center py-16 text-slate-600">
-        <span class="material-symbols-outlined text-5xl mb-4">fitness_center</span>
-        <p class="font-headline text-xl tracking-widest">NESSUNA SESSIONE</p>
-        <p class="text-sm mt-2">Inizia il tuo primo allenamento</p>
-      </div>`
-    :visibleSessions.map((h,ri)=>{
-      const isExt=h._src==="ext";
-      const realIdx=isExt
-        ?state.externalHistory.findIndex(e=>e.date===h.date&&e.type===h.type)
-        :state.history.findIndex(e=>e.date===h.date&&e.day===h.day);
-      const editKey=isExt?`ext_${realIdx}`:`kb_${realIdx}`;
-      const isEditing=state.editingEntry===editKey;
-      const isExtra=!isExt&&h.day&&h.day.startsWith("extra_");
-      const extraW=isExtra?getExtraById(h.day.replace("extra_","")):{};
-      const entryColor=isExt?(EXT_COLORS[h.type]||"#64748b"):isExtra?(extraW?.color||"#ffb693"):({A:"#ffb693",B:"#e9c176",C:"#50dad1"}[h.day]||"#ffb693");
-      const entryLabel=isExt?h.type:isExtra?(extraW?.label||h.day):`Giorno ${h.day}`;
-      const [dayNum,...rest]=h.date?h.date.split("/"):["—"];
-      const monthStr=rest.length>=1?["","GEN","FEB","MAR","APR","MAG","GIU","LUG","AGO","SET","OTT","NOV","DIC"][Number(rest[0])]||rest[0]:"";
-
-      const editForm=isEditing?`
-        <div class="mt-3 pt-3 border-t border-white/5 space-y-3">
-          <div class="grid grid-cols-2 gap-3">
-            <div><label class="text-[9px] font-bold text-slate-500 tracking-widest uppercase block mb-1">HR MEDIA</label>
-            <input class="log-input w-full" type="number" placeholder="bpm" value="${h.hrAvg||''}"
-              onchange="editEntryField('${editKey}','hrAvg',this.value)" inputmode="numeric"/></div>
-            <div><label class="text-[9px] font-bold text-slate-500 tracking-widest uppercase block mb-1">HR MAX</label>
-            <input class="log-input w-full" type="number" placeholder="bpm" value="${h.hrMax||''}"
-              onchange="editEntryField('${editKey}','hrMax',this.value)" inputmode="numeric"/></div>
-          </div>
-          <div><label class="text-[9px] font-bold text-slate-500 tracking-widest uppercase block mb-1">NOTE</label>
-          <input class="log-input w-full" type="text" placeholder="Note..." value="${h.notes||''}"
-            onchange="editEntryField('${editKey}','notes',this.value)"/></div>
-          <button onclick="closeEdit()" class="w-full py-3 bg-tertiary text-on-tertiary font-headline text-lg tracking-widest">✓ CHIUDI</button>
-        </div>`:"";
-
-      return `<div class="bg-surface-container ghost-border p-5 flex items-center gap-4 group hover:bg-surface-container-high transition-colors"
-        style="border-left:2px solid ${entryColor}">
-        <div class="text-center w-10 flex-shrink-0">
-          <p class="font-headline text-2xl leading-none text-on-surface">${dayNum}</p>
-          <p class="text-[9px] uppercase tracking-tighter text-slate-500 font-bold">${monthStr}</p>
-        </div>
-        <div class="flex-1 min-w-0">
-          <h4 class="font-headline text-xl tracking-wider" style="color:${entryColor}">${entryLabel.toUpperCase()}</h4>
-          <div class="flex gap-3 flex-wrap mt-1">
-            ${h.duration?`<span class="text-[10px] font-bold text-slate-500 uppercase">${h.duration} MIN</span>`:''}
-            ${h.hrAvg?`<span class="text-[10px] font-bold uppercase" style="color:#ffb4ab">❤️ ${h.hrAvg} BPM</span>`:''}
-            ${h.feeling?`<span class="text-[10px] font-bold text-slate-500 uppercase">${feelLabel[h.feeling]||h.feeling}</span>`:''}
-          </div>
-          ${h.notes?`<p class="text-xs text-slate-500 italic mt-1">"${h.notes}"</p>`:''}
-          ${editForm}
-        </div>
-        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-          <button onclick="openEdit('${editKey}')" class="text-slate-500 hover:text-primary transition-colors">
-            <span class="material-symbols-outlined text-lg">edit</span>
-          </button>
-          <button onclick="deleteEntryByKey('${editKey}')" class="text-slate-500 hover:text-error transition-colors">
-            <span class="material-symbols-outlined text-lg">delete</span>
-          </button>
-        </div>
-      </div>`;
-    }).join("");
-
-  // Filter tabs
-  const filterTabsHTML=[
-    {id:"all",label:"Tutti"},
-    {id:"kb",label:"KB"},
-    {id:"external",label:"Altri"},
-  ].map(f=>`<button onclick="setStatsFilter('${f.id}')"
-    class="px-6 py-2 font-headline text-xs tracking-widest uppercase transition-all duration-200 ${filter===f.id?'bg-primary text-on-primary-fixed':'bg-surface-container text-slate-400 hover:text-primary'}"
-    style="border-radius:999px">${f.label}</button>`).join("");
-
-  // Ext form
-  const ef=state.logExtForm;
-  const extTypes=["Calisthenics","Corsa","Yoga","Ciclismo","Nuoto","Calcio","Altro"];
-  const feelingOpts=[{v:"😫",l:"Pesante"},{v:"😐",l:"Normale"},{v:"💪",l:"Bene"},{v:"🔥",l:"Ottimo"}];
-  const extFormHTML=state.showExtForm?`
-    <div class="bg-surface-container ghost-border p-6 space-y-4 border-l-2 border-l-tertiary">
-      <p class="font-headline text-[10px] tracking-widest text-tertiary uppercase">Tipo attività</p>
+    const ef=state.logExtForm;
+    const extTypes=["Calisthenics","Corsa","Yoga","Ciclismo","Nuoto","Calcio","Altro"];
+    const feelOpts=[{v:"😫",l:"Pesante"},{v:"😐",l:"Normale"},{v:"💪",l:"Bene"},{v:"🔥",l:"Ottimo"}];
+    const extForm=state.showExtForm?`<div class="bg-surface-container ghost-border p-5 border-l-2 border-l-tertiary mb-4 space-y-4">
+      <p class="font-label text-[9px] uppercase tracking-widest text-tertiary">Tipo attività</p>
       <div class="flex flex-wrap gap-2">
         ${extTypes.map(t=>`<button onclick="setExtField('type','${t}')"
-          class="px-4 py-1.5 text-xs font-bold tracking-widest uppercase transition-all"
-          style="border-radius:999px;background:${ef.type===t?(EXT_COLORS[t]||'#64748b')+'22':'transparent'};border:1px solid ${ef.type===t?(EXT_COLORS[t]||'#64748b'):'rgba(90,65,54,0.3)'};color:${ef.type===t?(EXT_COLORS[t]||'#fff'):'#64748b'}">${t}</button>`).join("")}
+          class="px-3 py-1 font-label text-[10px] font-bold uppercase tracking-wider"
+          style="border:1px solid ${ef.type===t?(EXT_C[t]||'#64748b'):'rgba(90,65,54,0.3)'};color:${ef.type===t?(EXT_C[t]||'#fff'):'#64748b'};background:${ef.type===t?((EXT_C[t]||'#64748b')+'18'):'transparent'}">${t}</button>`).join("")}
       </div>
       <div class="grid grid-cols-3 gap-3">
-        <div><label class="text-[9px] font-bold text-slate-500 tracking-widest uppercase block mb-1">DURATA (min)</label>
+        <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">Durata (min)</label>
         <input class="log-input w-full" type="number" placeholder="45" value="${ef.duration}" oninput="setExtField('duration',this.value)" inputmode="numeric"/></div>
-        <div><label class="text-[9px] font-bold text-slate-500 tracking-widest uppercase block mb-1">HR MEDIA</label>
+        <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">HR media</label>
         <input class="log-input w-full" type="number" placeholder="bpm" value="${ef.hrAvg}" oninput="setExtField('hrAvg',this.value)" inputmode="numeric"/></div>
-        <div><label class="text-[9px] font-bold text-slate-500 tracking-widest uppercase block mb-1">HR MAX</label>
+        <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">HR max</label>
         <input class="log-input w-full" type="number" placeholder="bpm" value="${ef.hrMax}" oninput="setExtField('hrMax',this.value)" inputmode="numeric"/></div>
       </div>
       <div class="grid grid-cols-4 gap-2">
-        ${feelingOpts.map(o=>`<button onclick="setExtField('feeling','${o.v}')"
+        ${feelOpts.map(o=>`<button onclick="setExtField('feeling','${o.v}')"
           class="py-3 text-xl transition-all"
           style="background:${ef.feeling===o.v?'rgba(233,193,118,0.15)':'transparent'};border:1px solid ${ef.feeling===o.v?'#e9c176':'rgba(90,65,54,0.3)'}">${o.v}</button>`).join("")}
       </div>
-      <div><label class="text-[9px] font-bold text-slate-500 tracking-widest uppercase block mb-1">NOTE</label>
-      <input class="log-input w-full" type="text" placeholder="LeoMoves Upper, corsa lenta..." value="${ef.notes}" oninput="setExtField('notes',this.value)"/></div>
       <div class="flex gap-3">
-        <button onclick="state.showExtForm=false;render()" class="flex-1 py-3 bg-surface-container-high font-headline text-lg tracking-widest text-slate-400">ANNULLA</button>
-        <button onclick="saveExternalSession()" class="flex-2 py-3 font-headline text-lg tracking-widest text-on-primary-fixed" style="flex:2;background:linear-gradient(135deg,#50dad1,#00aba2)">SALVA</button>
+        <button onclick="state.showExtForm=false;render()" class="flex-1 py-3 bg-surface-container-high font-headline text-lg tracking-widest text-gray-500">ANNULLA</button>
+        <button onclick="saveExternalSession()" style="flex:2;padding:12px;background:linear-gradient(135deg,#50dad1,#00aba2);color:#000;" class="font-headline text-lg tracking-widest">SALVA</button>
       </div>
     </div>`:"";
 
-  return `<div class="screen bg-background" style="padding-top:64px;">
-    <header class="bg-background px-6 pt-12 pb-6">
-      <h2 class="font-headline text-6xl tracking-[0.05em] leading-none mb-2">STATS</h2>
-      <div class="w-12 h-0.5 bg-primary"></div>
-      <p class="text-[11px] font-bold text-slate-500 tracking-widest uppercase mt-2">${totalSessions} sessioni totali</p>
-    </header>
-    <main class="px-5 space-y-6 pb-8">
-
-      <!-- KPI grid -->
-      <p class="text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase">EXECUTIVE SUMMARY</p>
-      <div class="grid grid-cols-2 gap-3">
-        <div class="bg-surface-container ghost-border p-6 flex flex-col justify-between h-32 border-l-2 border-l-primary">
-          <span class="text-[10px] font-bold tracking-tighter uppercase text-slate-400">Sessioni</span>
-          <div class="font-headline text-5xl text-primary leading-none">${totalSessions}</div>
-        </div>
-        <div class="bg-surface-container ghost-border p-6 flex flex-col justify-between h-32 border-l-2 border-l-tertiary">
-          <span class="text-[10px] font-bold tracking-tighter uppercase text-slate-400">Minuti totali</span>
-          <div class="font-headline text-5xl text-tertiary leading-none">${totalMins.toLocaleString()}</div>
-        </div>
-        <div class="bg-surface-container ghost-border p-6 flex flex-col justify-between h-32 border-b-2 border-b-secondary">
-          <span class="text-[10px] font-bold tracking-tighter uppercase text-slate-400">Set AXE</span>
-          <div class="font-headline text-5xl text-secondary leading-none">${totalAxeSets}</div>
-        </div>
-        <div class="bg-surface-container ghost-border p-6 flex flex-col justify-between h-32 border-b-2 border-b-primary/60">
-          <span class="text-[10px] font-bold tracking-tighter uppercase text-slate-400">HR media KB</span>
-          <div class="font-headline text-5xl text-primary leading-none">${avgHR||"—"}</div>
-        </div>
-      </div>
-
-      <!-- Weekly distribution -->
-      <div>
-        <div class="flex justify-between items-end mb-4">
-          <p class="text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase">Distribuzione settimanale</p>
-          <span class="text-[10px] font-bold text-primary tracking-widest uppercase">7 GIORNI</span>
-        </div>
-        <div class="bg-surface-container ghost-border p-6">
-          <div class="flex items-end justify-between h-16 gap-2">${weekBarsHTML}</div>
-        </div>
-      </div>
-
-      <!-- Session archive -->
-      <div>
-        <div class="flex justify-between items-center mb-4">
-          <p class="text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase">Archivio sessioni</p>
-          <div class="flex gap-3">
-            <button onclick="state.showExtForm=!state.showExtForm;render()"
-              class="text-[10px] font-bold text-tertiary tracking-tighter uppercase border-b border-tertiary/30">
-              ${state.showExtForm?"✕ Chiudi":"+ Aggiungi"}
-            </button>
-            ${allSessions.length>0?`<button onclick="clearAll()" class="text-[10px] font-bold text-error tracking-tighter uppercase border-b border-error/30">Cancella tutto</button>`:""}
+    const list=visible.length===0
+      ?`<div class="flex flex-col items-center py-16 text-gray-600">
+          <span class="material-symbols-outlined text-5xl mb-4">fitness_center</span>
+          <p class="font-headline text-xl tracking-widest">NESSUNA SESSIONE</p>
+          <p class="font-label text-sm mt-2">Inizia il primo allenamento</p>
+        </div>`
+      :visible.map(h=>{
+        const isExt=h._src==="ext";
+        const realIdx=isExt?extHist.findIndex(e=>e.date===h.date&&e.type===h.type):hist.findIndex(e=>e.date===h.date&&e.day===h.day);
+        const editKey=isExt?`ext_${realIdx}`:`kb_${realIdx}`;
+        const isEditing=state.editingEntry===editKey;
+        const col=isExt?(EXT_C[h.type]||"#64748b"):(KPhex[h.day]||"#ffb693");
+        const label=isExt?h.type:h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):`Giorno ${h.day}`;
+        const [dayN,...rest]=h.date?h.date.split("/"):["—"];
+        const mo=rest.length?["","GEN","FEB","MAR","APR","MAG","GIU","LUG","AGO","SET","OTT","NOV","DIC"][Number(rest[0])]||"":"";
+        const editBlock=isEditing?`<div class="mt-3 pt-3 border-t border-white/5 space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">HR Media</label>
+            <input class="log-input w-full" type="number" placeholder="bpm" value="${h.hrAvg||''}" onchange="editEntryField('${editKey}','hrAvg',this.value)" inputmode="numeric"/></div>
+            <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">HR Max</label>
+            <input class="log-input w-full" type="number" placeholder="bpm" value="${h.hrMax||''}" onchange="editEntryField('${editKey}','hrMax',this.value)" inputmode="numeric"/></div>
           </div>
-        </div>
-        <div class="flex gap-2 mb-4">${filterTabsHTML}</div>
-        ${extFormHTML}
-        <div class="space-y-1">${sessionListHTML}</div>
-      </div>
+          <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">Note</label>
+          <input class="log-input w-full" type="text" placeholder="Note..." value="${h.notes||''}" onchange="editEntryField('${editKey}','notes',this.value)"/></div>
+          <button onclick="closeEdit()" class="w-full py-3 font-headline text-lg tracking-widest" style="background:linear-gradient(135deg,#50dad1,#00aba2);color:#000">✓ CHIUDI</button>
+        </div>`:"";
+        return `<div class="flex items-center gap-4 p-4 bg-surface-container ghost-border hover:bg-surface-container-high transition-colors group" style="border-left:2px solid ${col}">
+          <div class="text-center w-9 flex-shrink-0">
+            <p class="font-headline text-xl leading-none">${dayN}</p>
+            <p class="font-label text-[8px] uppercase text-gray-600">${mo}</p>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-headline text-lg leading-none" style="color:${col}">${label.toUpperCase()}</p>
+            <div class="flex gap-3 mt-1 flex-wrap">
+              ${h.duration?`<span class="font-label text-[9px] text-gray-500 uppercase">${h.duration} min</span>`:''}
+              ${h.hrAvg?`<span class="font-label text-[9px] uppercase" style="color:#ffb4ab">❤️ ${h.hrAvg}</span>`:''}
+              ${h.feeling?`<span class="font-label text-[9px] text-gray-500">${h.feeling}</span>`:''}
+            </div>
+            ${h.notes?`<p class="font-label text-[10px] italic text-gray-600 mt-1">"${h.notes}"</p>`:''}
+            ${editBlock}
+          </div>
+          <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+            <button onclick="openEdit('${editKey}')" class="text-gray-600 hover:text-primary transition-colors">
+              <span class="material-symbols-outlined text-base">edit</span>
+            </button>
+            <button onclick="deleteEntryByKey('${editKey}')" class="text-gray-600 hover:text-error transition-colors">
+              <span class="material-symbols-outlined text-base">delete</span>
+            </button>
+          </div>
+        </div>`;
+      }).join("");
 
-      <!-- Backup -->
-      <div>
-        <p class="text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase mb-3">BACKUP DATI</p>
-        <div class="space-y-2">
-          <button onclick="exportJSON()" class="w-full bg-surface-container ghost-border p-4 flex items-center gap-3 text-left hover:bg-surface-container-high transition-colors border-l-2 border-l-tertiary">
-            <span class="material-symbols-outlined text-tertiary">download</span>
-            <div>
-              <div class="font-headline text-lg tracking-wider text-on-surface">ESPORTA JSON</div>
-              <div class="text-[10px] text-slate-500 uppercase font-bold">Backup completo</div>
+    return `${filterBar}${extForm}<div class="space-y-1">${list}</div>
+    <!-- Backup -->
+    <div class="mt-8 space-y-2">
+      <p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-600 mb-3">BACKUP</p>
+      ${[
+        {fn:"exportJSON()",icon:"download",lbl:"Esporta JSON",c:"tertiary"},
+        {fn:"exportCSV()", icon:"table_view",lbl:"Esporta CSV", c:"secondary"},
+        {fn:"importJSON()",icon:"upload",   lbl:"Importa JSON",c:"primary"},
+      ].map(b=>`<button onclick="${b.fn}" class="w-full bg-surface-container ghost-border p-4 flex items-center gap-3 hover:bg-surface-container-high transition-colors border-l-2" style="border-left-color:var(--tw-${b.c})||'#ffb693'">
+        <span class="material-symbols-outlined" style="color:#${b.c==='tertiary'?'50dad1':b.c==='secondary'?'e9c176':'ffb693'}">${b.icon}</span>
+        <span class="font-headline text-lg tracking-wider">${b.lbl}</span>
+      </button>`).join("")}
+    </div>`;
+  }
+
+  // ══ STATS ══
+  function tabStats(){
+    const now=new Date();
+    const allForKPI=[...hist,...extHist];
+    const totalSessions=allForKPI.length;
+    const totalMins=allForKPI.reduce((s,h)=>s+(h.duration||0),0);
+    const axeSets=(state.axeHistory||[]).reduce((s,h)=>s+(h.sets||0),0);
+
+    // Weekly bars ultimi 7gg
+    const weekCounts=Array(7).fill(0);
+    const dow=["LUN","MAR","MER","GIO","VEN","SAB","DOM"];
+    allForKPI.forEach(h=>{
+      try{const[d,m,y]=h.date.split("/").map(Number);const dt=new Date(y,m-1,d);
+      const diff=Math.floor((now-dt)/(1000*60*60*24));
+      if(diff>=0&&diff<7)weekCounts[6-diff]++;}catch(e){}
+    });
+    const maxW=Math.max(...weekCounts,1);
+
+    // Distrib A/B/C
+    const dist={A:0,B:0,C:0};
+    hist.forEach(h=>{if(dist[h.day]!==undefined)dist[h.day]++;});
+    const KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
+
+    return `<div class="space-y-6">
+      <!-- KPI -->
+      <div class="grid grid-cols-2 gap-3">
+        ${[
+          {l:"Sessioni totali",v:totalSessions,c:"primary"},
+          {l:"Minuti totali",v:totalMins.toLocaleString(),c:"tertiary"},
+          {l:"Set AXE",v:axeSets,c:"#8b5cf6",hex:true},
+          {l:"HR media KB",v:hist.filter(h=>h.hrAvg).length?Math.round(hist.filter(h=>h.hrAvg).reduce((s,h)=>s+Number(h.hrAvg),0)/hist.filter(h=>h.hrAvg).length):"—",c:"error"},
+        ].map(k=>`<div class="bg-surface-container ghost-border p-5 border-l-2" style="border-left-color:${k.hex?k.c:'var(--'+k.c+')'}||#ffb693">
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">${k.l}</p>
+          <div class="font-headline text-5xl leading-none" style="color:${k.hex?k.c:''}; ${!k.hex?'--c:var(--'+k.c+')':''}"
+            class="${!k.hex?'text-'+k.c:''}">${k.v}</div>
+        </div>`).join("")}
+      </div>
+      <!-- Weekly bars -->
+      <div class="bg-surface-container ghost-border p-5">
+        <p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-5">FREQUENZA — ULTIMI 7 GIORNI</p>
+        <div class="flex items-end justify-between gap-2" style="height:60px">
+          ${weekCounts.map((c,i)=>`<div class="flex-1 flex flex-col items-center gap-2">
+            <div class="w-full relative bg-surface-container-low" style="height:52px">
+              <div class="absolute bottom-0 left-0 right-0 bg-primary" style="height:${c>0?Math.round((c/maxW)*52)+4:3}px;${c>0?'box-shadow:0 0 6px rgba(255,182,147,0.3)':'opacity:0.3'}"></div>
             </div>
-          </button>
-          <button onclick="exportCSV()" class="w-full bg-surface-container ghost-border p-4 flex items-center gap-3 text-left hover:bg-surface-container-high transition-colors border-l-2 border-l-secondary">
-            <span class="material-symbols-outlined text-secondary">table_view</span>
-            <div>
-              <div class="font-headline text-lg tracking-wider text-on-surface">ESPORTA CSV</div>
-              <div class="text-[10px] text-slate-500 uppercase font-bold">Per Excel / Sheets</div>
+            <span class="font-label text-[8px] text-gray-600">${dow[i]}</span>
+          </div>`).join("")}
+        </div>
+      </div>
+      <!-- Distribuzione -->
+      <div class="bg-surface-container ghost-border p-5">
+        <p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-4">DISTRIBUZIONE KB A/B/C</p>
+        <div class="space-y-3">
+          ${Object.entries(dist).map(([k,v])=>{
+            const pct=hist.length?Math.round((v/hist.length)*100):0;
+            return `<div>
+              <div class="flex justify-between mb-1">
+                <span class="font-headline text-lg" style="color:${KPhex[k]}">Giorno ${k}</span>
+                <span class="font-headline text-lg text-gray-500">${v} · ${pct}%</span>
+              </div>
+              <div class="h-1.5 bg-surface-container-high overflow-hidden">
+                <div style="height:100%;width:${pct}%;background:${KPhex[k]};box-shadow:0 0 6px ${KPhex[k]}66;transition:width 0.6s"></div>
+              </div>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // ══ SALUTE ══
+  function tabSalute(){
+    const h=state.healthHistory||[];
+    const prof=state.healthProfile||{};
+    const f=state.healthForm||{};
+    const lastWeight=h.filter(e=>e.weight).slice(-1)[0];
+    const lastHRV=h.filter(e=>e.hrv).slice(-1)[0];
+    const lastSleep=h.filter(e=>e.sleep).slice(-1)[0];
+    const bmi=lastWeight&&prof.height?(lastWeight.weight/((prof.height/100)**2)).toFixed(1):null;
+    const bmiC=!bmi?"#64748b":bmi<18.5?"#60a5fa":bmi<25?"#50dad1":bmi<30?"#e9c176":"#ffb4ab";
+
+    function spark(data,key,color){
+      const vals=data.filter(e=>e[key]!=null).slice(-7).map(e=>Number(e[key]));
+      if(vals.length<2)return `<p class="font-label text-[9px] text-gray-600 mt-1">Dati insufficienti</p>`;
+      const mn=Math.min(...vals)-1,mx=Math.max(...vals)+1;
+      const W=100,H=28;
+      const pts=vals.map((v,i)=>`${i/(vals.length-1)*W},${H-((v-mn)/(mx-mn))*H}`).join(" ");
+      return `<svg viewBox="0 0 ${W} ${H}" class="w-full mt-2" style="height:28px">
+        <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="${vals.length>1?(1/(vals.length-1)*(vals.length-1)*W):0}" cy="${H-((vals[vals.length-1]-mn)/(mx-mn))*H}" r="2.5" fill="${color}"/>
+      </svg>`;
+    }
+
+    return `<div class="space-y-4">
+      <!-- KPI Salute -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-surface-container ghost-border p-5 col-span-2" style="border-left:2px solid ${bmiC}">
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">BMI</p>
+          <div class="flex items-baseline gap-3">
+            <span class="font-headline text-6xl leading-none" style="color:${bmiC}">${bmi||"—"}</span>
+            <span class="font-headline text-xl" style="color:${bmiC}66">${!bmi?"—":bmi<18.5?"SOTTOPESO":bmi<25?"OTTIMALE":bmi<30?"SOVRAPPESO":"OBESITÀ"}</span>
+          </div>
+          ${bmi?`<div class="mt-3 h-1 bg-surface-container-high overflow-hidden"><div style="width:${Math.min((bmi/35)*100,100)}%;height:100%;background:${bmiC};box-shadow:0 0 6px ${bmiC}88"></div></div>`:""}
+        </div>
+        <div class="bg-surface-container ghost-border p-5 border-l-2 border-l-secondary">
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">Peso</p>
+          <span class="font-headline text-5xl text-secondary">${lastWeight?.weight||"—"}</span>
+          <span class="font-headline text-xl text-secondary/60 ml-1">KG</span>
+          ${spark(h,'weight','#e9c176')}
+        </div>
+        <div class="bg-surface-container ghost-border p-5 border-l-2 border-l-tertiary">
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">HRV</p>
+          <span class="font-headline text-5xl text-tertiary">${lastHRV?.hrv||"—"}</span>
+          <span class="font-headline text-xl text-tertiary/60 ml-1">MS</span>
+          ${spark(h,'hrv','#50dad1')}
+        </div>
+        <div class="bg-surface-container ghost-border p-5 border-b-2 border-b-primary/60">
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">Sonno</p>
+          <span class="font-headline text-5xl">${lastSleep?.sleep||"—"}</span>
+          <span class="font-headline text-xl text-gray-600 ml-1">ORE</span>
+        </div>
+        <div class="bg-surface-container ghost-border p-5 border-b-2 border-b-secondary/60">
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">Qualità</p>
+          <span class="font-headline text-5xl">${lastSleep?.sleepQ||"—"}</span>
+          <span class="font-headline text-xl text-gray-600 ml-1">/ 5</span>
+        </div>
+      </div>
+      <!-- Form log salute -->
+      <div class="bg-surface-container ghost-border p-6 border-l-2 border-l-primary">
+        <h3 class="font-headline text-3xl mb-5">LOG OGGI</h3>
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">Peso (kg)</label>
+            <input class="log-input w-full" type="number" placeholder="70.5" step="0.1" value="${f.weight||''}" oninput="state.healthForm.weight=this.value" inputmode="decimal"/></div>
+            <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">HRV (ms)</label>
+            <input class="log-input w-full" type="number" placeholder="65" value="${f.hrv||''}" oninput="state.healthForm.hrv=this.value" inputmode="numeric"/></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">Sonno (ore)</label>
+            <input class="log-input w-full" type="number" placeholder="7.5" step="0.5" value="${f.sleep||''}" oninput="state.healthForm.sleep=this.value" inputmode="decimal"/></div>
+            <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">Qualità (1–5)</label>
+            <div class="flex gap-1 mt-1">${[1,2,3,4,5].map(v=>`<button onclick="state.healthForm.sleepQ=${v};render()"
+              class="flex-1 py-2 font-headline text-base transition-all"
+              style="background:${f.sleepQ===v?'rgba(255,182,147,0.15)':'transparent'};border:1px solid ${f.sleepQ===v?'#ffb693':'rgba(90,65,54,0.3)'};color:${f.sleepQ===v?'#ffb693':'#64748b'}">${v}</button>`).join("")}</div>
             </div>
-          </button>
-          <button onclick="importJSON()" class="w-full bg-surface-container ghost-border p-4 flex items-center gap-3 text-left hover:bg-surface-container-high transition-colors border-l-2 border-l-primary">
-            <span class="material-symbols-outlined text-primary">upload</span>
-            <div>
-              <div class="font-headline text-lg tracking-wider text-on-surface">IMPORTA JSON</div>
-              <div class="text-[10px] text-slate-500 uppercase font-bold">Ripristina backup</div>
-            </div>
+          </div>
+          <button onclick="saveHealthEntry()"
+            class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
+            style="background:linear-gradient(135deg,#ffb693,#ff6b00);color:#000">
+            SALVA OGGI
+            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">save</span>
           </button>
         </div>
       </div>
+      <!-- Profilo -->
+      <div class="bg-surface-container ghost-border p-5">
+        <p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-4">PROFILO</p>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">Altezza (cm)</label>
+          <input class="log-input w-full" type="number" placeholder="175" value="${prof.height||''}" onchange="state.healthProfile.height=Number(this.value);saveHealthProfile();render()" inputmode="numeric"/></div>
+          <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">Età</label>
+          <input class="log-input w-full" type="number" placeholder="35" value="${prof.age||''}" onchange="state.healthProfile.age=Number(this.value);saveHealthProfile();render()" inputmode="numeric"/></div>
+        </div>
+      </div>
+    </div>`;
+  }
 
+  return `<div class="screen bg-background" style="padding-top:56px;">
+    <main class="px-5 pt-8 pb-12">
+      <header class="mb-8">
+        <h1 class="font-headline text-6xl tracking-tight leading-none">LOG</h1>
+        <div class="w-12 h-1 bg-primary mt-2"></div>
+      </header>
+      ${subNav}
+      ${logSub==="sessioni"?tabSessioni():logSub==="stats"?tabStats():tabSalute()}
     </main>
     ${navHTML("log")}
   </div>`;
@@ -4332,209 +4333,139 @@ function renderPlan(){
 }
 // ── RENDER TRAIN ─────────────────────────────────────────────────────────────
 function renderTrain(){
-  const p=state.plan||{};
-  const sub=state.trainSubTab||"oggi";
-  const sug=getSmartSuggestion();
-  const bpWorkouts=EXTRA_WORKOUTS.filter(w=>w.id.startsWith("BP"));
-  const otherExtra=EXTRA_WORKOUTS.filter(w=>!w.id.startsWith("BP")&&w.id!=="D1");
-  const d1=EXTRA_WORKOUTS.find(w=>w.id==="D1");
-  const axeP=state.axeProgress;
+  const sub=state.trainSubTab||"base";
 
-  // Filter tabs (stile train_v2 — orizzontali senza pill arrotondati)
-  const tabs=[{id:"oggi",label:"TODAY"},{id:"kb",label:"KB"},{id:"bellplex",label:"BELLPLEX"},{id:"axe",label:"AXE"}];
-  const tabBar=`<div class="flex flex-wrap gap-2 mb-10">
+  const CATEGORIE={
+    forza:{label:"⚡ Forza",color:"#ffb693",ids:["D1","B2","B3","B8"]},
+    condizionamento:{label:"🔥 Condizionamento",color:"#e9c176",ids:["B4","B5","B6","B7","B9"]},
+    tecnica:{label:"🎯 Tecnica & Circuiti",color:"#50dad1",ids:["C2","C3","C4","C5","C6","C7"]},
+  };
+
+  const BP_LEVELS=[
+    {label:"🟢 Entry",     color:"#ffb4ab", ids:["BP1","BP3","BP6","BP7","BP10","BP13","BP14"]},
+    {label:"🟡 Intermediate",color:"#e9c176",ids:["BP2","BP4","BP5","BP8","BP9","BP15","BP18"]},
+    {label:"🔴 Advanced",  color:"#ffb693", ids:["BP11","BP12","BP16","BP17","BP19","BP20"]},
+  ];
+
+  const tabs=[
+    {id:"base",label:"Giorni"},
+    {id:"alt",label:"Alternativi"},
+    {id:"bellplex",label:"Bellplex"},
+  ];
+
+  const tabBar=`<div class="flex gap-2 mb-8">
     ${tabs.map(t=>`<button onclick="state.trainSubTab='${t.id}';render()"
-      class="px-8 py-2 font-label text-xs font-bold tracking-widest uppercase active:scale-95 transition-transform"
-      style="${sub===t.id?'background:#ffb693;color:#351000':'border:1px solid rgba(90,65,54,0.5);color:#64748b;background:transparent'}">${t.label}</button>`).join("")}
+      class="flex-1 py-2.5 font-headline text-base tracking-widest uppercase active:scale-95 transition-transform"
+      style="${sub===t.id?'background:#ffb693;color:#351000':'border:1px solid rgba(90,65,54,0.4);color:#64748b;background:transparent'}">${t.label}</button>`).join("")}
   </div>`;
 
-  function tabOggi(){
-    const sugHex=sug.color||"#ffb693";
+  // ── BASE: A/B/C grandi ──
+  function tabBase(){
+    const KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
+    const KPicon={A:"bolt",B:"rebase_edit",C:"architecture"};
+    const sug=getSmartSuggestion();
     return `
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-      <!-- Suggestion main card -->
-      <div class="md:col-span-2 bg-surface-container p-8 ghost-border border-l-2 relative overflow-hidden group" style="border-left-color:${sugHex}">
-        <div class="absolute -right-10 -bottom-10 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
-          <span class="material-symbols-outlined text-[160px]" style="color:${sugHex}">fitness_center</span>
+    ${["A","B","C"].map(k=>{
+      const hex=KPhex[k];
+      const isSug=sug.type==="abc"&&sug.key===k;
+      return `<div class="relative bg-surface-container ghost-border overflow-hidden mb-3" style="border-left:2px solid ${hex}">
+        <div class="absolute -right-4 -top-4 opacity-5 pointer-events-none">
+          <span class="material-symbols-outlined text-[100px]" style="color:${hex}">${KPicon[k]}</span>
         </div>
-        <p class="font-label text-[10px] font-bold tracking-widest uppercase mb-4" style="color:${sugHex}">Raccomandazione del Giorno</p>
-        <h3 class="font-headline text-4xl mb-4 leading-tight">${sug.title.toUpperCase()}</h3>
-        <p class="font-label text-sm text-on-surface-variant max-w-md mb-8 leading-relaxed">${sug.reason}</p>
-        ${sug.action?`<button onclick="${sug.action}"
-          class="bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed px-8 py-4 font-headline text-xl tracking-widest hover:scale-[0.98] transition-transform flex items-center gap-3 active:scale-95">
-          ${sug.actionLabel} <span class="material-symbols-outlined">play_arrow</span>
-        </button>`:""}
-      </div>
-      <!-- AXE toggle side card -->
-      <div class="bg-surface-container p-8 ghost-border flex flex-col justify-between border-b-2" style="border-bottom-color:${p.axeOn?'#8b5cf6':'rgba(90,65,54,0.3)'}">
-        <div>
-          <p class="font-label text-[10px] font-bold tracking-widest uppercase mb-2" style="color:${p.axeOn?'#8b5cf6':'#64748b'}">AXE: Pavel AGT</p>
-          <div class="font-headline text-5xl leading-none" style="color:${p.axeOn?'#8b5cf6':'#323538'}">${p.axeOn?'ON':'OFF'}</div>
-        </div>
-        <div class="space-y-3 mt-6">
-          <div class="w-full h-1 bg-surface-container-highest overflow-hidden">
-            <div class="h-full transition-all" style="width:${p.axeOn?'100%':'0%'};background:#8b5cf6;box-shadow:0 0 8px rgba(139,92,246,0.5)"></div>
+        <div class="p-6 relative z-10">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <div class="font-headline text-5xl leading-none" style="color:${hex}">GG ${k}</div>
+              <div class="font-label text-xs font-bold uppercase tracking-wide text-gray-400 mt-1">${DAYS[k].subtitle}</div>
+            </div>
+            <div class="text-right">
+              <div class="font-headline text-xl text-gray-500">~${DAYS[k].totalMin} MIN</div>
+              ${isSug?`<div class="font-label text-[9px] uppercase tracking-widest mt-1" style="color:${hex}">SUGGERITO</div>`:''}
+            </div>
           </div>
-          <button onclick="planToggle('axeOn')" class="w-full py-3 font-headline text-xl tracking-widest active:scale-95 transition-transform"
-            style="background:${p.axeOn?'#8b5cf620':'transparent'};border:1px solid ${p.axeOn?'#8b5cf6':'rgba(90,65,54,0.3)'};color:${p.axeOn?'#8b5cf6':'#64748b'}">
-            ${p.axeOn?'DISATTIVA':'ATTIVA'}
+          <p class="font-label text-xs text-on-surface-variant mb-5">${DAYS[k].focus}</p>
+          <button onclick="startWorkout('${k}')"
+            class="w-full py-3.5 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
+            style="background:linear-gradient(135deg,${hex},${hex}bb);color:#000">
+            START GIORNO ${k}
+            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">play_arrow</span>
           </button>
         </div>
-      </div>
-    </div>
-
-    <!-- Quick access 4 grid -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      ${["A","B","C"].map(k=>{
-        const hex={A:"#ffb693",B:"#e9c176",C:"#50dad1"}[k];
-        const icon={A:"bolt",B:"rebase_edit",C:"architecture"}[k];
-        return `<button onclick="startWorkout('${k}')" class="bg-surface-container p-6 ghost-border border-l-2 text-left group hover:bg-surface-container-high transition-colors active:scale-95" style="border-left-color:${hex}">
-          <span class="material-symbols-outlined mb-4 block" style="color:${hex};font-variation-settings:'FILL' 1">${icon}</span>
-          <span class="font-label text-[10px] font-bold tracking-widest text-gray-500 uppercase block mb-1">${DAYS[k].subtitle}</span>
-          <span class="font-headline text-2xl group-hover:opacity-80 transition-opacity" style="color:${hex}">GG ${k}</span>
-        </button>`;
-      }).join("")}
-      <button onclick="state.trainSubTab='axe';render()" class="bg-surface-container p-6 ghost-border border-l-2 text-left group hover:bg-surface-container-high transition-colors active:scale-95" style="border-left-color:#8b5cf6">
-        <span class="material-symbols-outlined mb-4 block text-axe-violet" style="font-variation-settings:'FILL' 1">flare</span>
-        <span class="font-label text-[10px] font-bold tracking-widest text-gray-500 uppercase block mb-1">Pavel AGT</span>
-        <span class="font-headline text-2xl group-hover:opacity-80 transition-opacity text-axe-violet">AXE</span>
-      </button>
-    </div>`;
-  }
-
-  function tabKB(){
-    return `
-    <div class="flex justify-between items-end mb-8 pb-4 border-b border-white/5">
-      <h3 class="font-headline text-3xl tracking-wide">Kettlebell Sequences</h3>
-      <span class="font-label text-xs text-primary uppercase tracking-widest">Prestige Program</span>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-      ${["A","B","C"].map(k=>{
-        const hex={A:"#ffb693",B:"#e9c176",C:"#50dad1"}[k];
-        return `<div class="relative bg-surface-container p-8 ghost-border group overflow-hidden" style="border-left:2px solid ${hex}">
-          <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-            style="background:radial-gradient(ellipse at top right,${hex}10,transparent 70%)"></div>
-          <div class="flex justify-between items-start mb-10">
-            <span class="font-headline text-5xl leading-none" style="color:${hex}">GG ${k}</span>
-            <span class="material-symbols-outlined" style="color:${hex};font-variation-settings:'FILL' 1">bolt</span>
-          </div>
-          <div class="space-y-3">
-            <div class="flex justify-between items-center border-b border-white/5 pb-2">
-              <span class="font-label text-sm font-medium">${DAYS[k].subtitle}</span>
-              <span class="font-headline text-xl">~${DAYS[k].totalMin}m</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="font-label text-xs text-on-surface-variant">${DAYS[k].focus}</span>
-              <button onclick="startWorkout('${k}')" class="bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed px-4 py-2 font-headline text-sm tracking-widest active:scale-95 transition-transform">
-                START
-              </button>
-            </div>
-          </div>
-        </div>`;
-      }).join("")}
-    </div>
-    ${d1?`<div class="flex items-center justify-between p-6 bg-surface-container ghost-border mb-2 border-b-2 border-b-error/40 group hover:bg-surface-container-high transition-colors cursor-pointer" onclick="openExtraDetail('D1')">
-      <div>
-        <p class="font-label text-[10px] uppercase tracking-widest text-gray-500 mb-1">Pavel • Total Tension</p>
-        <p class="font-headline text-2xl text-error">${d1.label} — ${d1.title}</p>
-      </div>
-      <span class="material-symbols-outlined text-gray-600 group-hover:text-error transition-colors">chevron_right</span>
-    </div>`:""}
-    <div class="space-y-1 mt-4">
-      ${otherExtra.map(w=>`<div onclick="openExtraDetail('${w.id}')" class="flex items-center gap-4 p-5 bg-surface-container ghost-border hover:bg-surface-container-high transition-colors group cursor-pointer">
-        <div class="flex-1">
-          <p class="font-headline text-xl tracking-wide" style="color:${w.color}">${w.label}</p>
-          <p class="font-label text-xs text-gray-500">${w.meta}</p>
-        </div>
-        <span class="material-symbols-outlined text-gray-700 group-hover:text-gray-400 transition-colors">chevron_right</span>
-      </div>`).join("")}
-    </div>`;
-  }
-
-  function tabBellplex(){
-    const levels=[
-      {label:"ENTRY",hex:"#ffb4ab",ids:["BP1","BP3","BP6","BP7","BP10","BP13","BP14"]},
-      {label:"INTERMEDIATE",hex:"#e9c176",ids:["BP2","BP4","BP5","BP8","BP9","BP15","BP18"]},
-      {label:"ADVANCED",hex:"#ffb693",ids:["BP11","BP12","BP16","BP17","BP19","BP20"]},
-    ];
-    return `
-    <h3 class="font-headline text-4xl tracking-wide border-l-4 border-l-error pl-4 mb-8">BELLPLEX COMPLEXES</h3>
-    ${levels.map(lv=>{
-      const wks=bpWorkouts.filter(w=>lv.ids.includes(w.id));
-      return wks.length?`<div class="mb-8">
-        <p class="font-label text-[10px] font-bold tracking-widest uppercase mb-3" style="color:${lv.hex}">${lv.label}</p>
-        <div class="space-y-1">
-          ${wks.map(w=>`<div onclick="openExtraDetail('${w.id}')" class="bg-surface-container p-5 ghost-border flex justify-between items-center group hover:bg-surface-container-high transition-colors cursor-pointer">
-            <div class="flex items-center gap-5">
-              <span class="font-headline text-2xl" style="color:${lv.hex}">${String(bpWorkouts.indexOf(w)+1).padStart(2,'0')}</span>
-              <div>
-                <p class="font-headline text-xl tracking-wider">${w.label} — ${w.title}</p>
-                <p class="font-label text-[10px] text-gray-500 uppercase font-bold">${w.meta}</p>
-              </div>
-            </div>
-            <span class="material-symbols-outlined text-gray-700 group-hover:text-error transition-colors">chevron_right</span>
-          </div>`).join("")}
-        </div>
-      </div>`:"";
+      </div>`;
     }).join("")}`;
   }
 
-  function tabAXE(){
-    const axeEx=AXE_EX[axeP.exercise||"swing"]||AXE_EX["swing"];
-    return `
-    <div class="bg-surface-container-low p-10 ghost-border relative overflow-hidden mb-6">
-      <div class="absolute -top-10 -right-10 opacity-5 pointer-events-none">
-        <span class="material-symbols-outlined text-[200px] text-axe-violet">flare</span>
-      </div>
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
-        <div>
-          <h3 class="font-headline text-5xl text-axe-violet mb-2">AXE: PAVEL AGT</h3>
-          <p class="font-label text-sm text-on-surface-variant max-w-md leading-relaxed">${axeEx.cue}</p>
-        </div>
-        <div class="grid grid-cols-2 gap-4 flex-shrink-0">
-          <div class="bg-background/50 p-4 text-center">
-            <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">Set</p>
-            <div class="font-headline text-4xl text-axe-violet">${axeP.currentSets||14}</div>
+  // ── ALTERNATIVI: 3 categorie collassabili ──
+  function tabAlt(){
+    return Object.entries(CATEGORIE).map(([catId,cat])=>{
+      const wks=EXTRA_WORKOUTS.filter(w=>cat.ids.includes(w.id));
+      const isOpen=(state.plan.openAcc===catId);
+      return `<div class="mb-2">
+        <button onclick="toggleAcc('${catId}')"
+          class="w-full flex justify-between items-center p-5 bg-surface-container ghost-border border-l-2 active:scale-[0.99] transition-transform"
+          style="border-left-color:${cat.color}">
+          <div>
+            <span class="font-headline text-xl tracking-wide">${cat.label}</span>
+            <span class="font-label text-[9px] uppercase text-gray-600 ml-3">${wks.length} workout</span>
           </div>
-          <div class="bg-background/50 p-4 text-center">
-            <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">Rep</p>
-            <div class="font-headline text-4xl text-axe-violet">${axeP.repsPerSet||4}</div>
-          </div>
-        </div>
-      </div>
-      <div class="mt-8 flex flex-col sm:flex-row gap-4 relative z-10">
-        <a href="${axeEx.yt}" target="_blank"
-          class="flex items-center gap-2 border border-axe-violet text-axe-violet px-6 py-3 font-headline text-lg tracking-widest active:scale-95 transition-transform">
-          <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">smart_display</span>
-          VIDEO TECNICA
-        </a>
-        <button onclick="switchTab('axe')"
-          class="flex-1 py-3 font-headline text-xl tracking-widest flex items-center justify-between px-6 active:scale-95 transition-transform"
-          style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff">
-          INIZIA SESSIONE AXE <span class="material-symbols-outlined">play_arrow</span>
+          <span class="material-symbols-outlined text-gray-500 transition-transform ${isOpen?'rotate-180':''}"
+            style="transition:transform 0.2s">expand_more</span>
         </button>
-      </div>
-    </div>
-    <div class="space-y-1">
-      <p class="font-label text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-3">COMPATIBILITÀ</p>
-      ${[{c:"#ffb693",t:"AXE + KB",d:"Stesso giorno OK — non glicolitico. Ideale prima o separato."},
-         {c:"#ffb4ab",t:"AXE + Bellplex",d:"Non nello stesso giorno — Bellplex è glicolitico."},
-         {c:"#50dad1",t:"AXE + Anelli",d:"Perfettamente compatibile — AXE prima, anelli dopo."}].map(r=>
-        `<div class="bg-surface-container ghost-border p-5 border-l-2" style="border-left-color:${r.c}">
-          <p class="font-headline text-lg mb-1" style="color:${r.c}">${r.t}</p>
-          <p class="font-label text-xs text-on-surface-variant">${r.d}</p>
-        </div>`).join("")}
-    </div>`;
+        ${isOpen?`<div class="space-y-px">
+          ${wks.map(w=>`<div onclick="openExtraDetail('${w.id}')"
+            class="flex items-center gap-4 p-4 bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer group">
+            <div class="w-0.5 self-stretch rounded-full flex-shrink-0" style="background:${cat.color}"></div>
+            <div class="flex-1">
+              <p class="font-headline text-lg leading-none" style="color:${cat.color}">${w.label}</p>
+              <p class="font-label text-[10px] text-gray-500 mt-1">${w.title} · ${w.meta}</p>
+            </div>
+            <span class="material-symbols-outlined text-gray-700 group-hover:text-gray-400 transition-colors">chevron_right</span>
+          </div>`).join("")}
+        </div>`:''}
+      </div>`;
+    }).join("");
   }
 
-  return `<div class="screen bg-background" style="padding-top:64px;">
-    <main class="px-6 pt-8 pb-10 max-w-xl mx-auto">
-      <header class="space-y-4 mb-8">
-        <h1 class="font-headline text-6xl md:text-7xl tracking-tight leading-none uppercase">Training Hub</h1>
-        <div class="w-16 h-1 bg-primary"></div>
+  // ── BELLPLEX: per difficoltà collassabile ──
+  function tabBellplex(){
+    const bpAll=EXTRA_WORKOUTS.filter(w=>w.id.startsWith("BP"));
+    return BP_LEVELS.map(lv=>{
+      const wks=bpAll.filter(w=>lv.ids.includes(w.id));
+      const isOpen=(state.plan.openAcc===lv.label);
+      return `<div class="mb-2">
+        <button onclick="toggleAcc('${lv.label}')"
+          class="w-full flex justify-between items-center p-5 bg-surface-container ghost-border border-l-2 active:scale-[0.99] transition-transform"
+          style="border-left-color:${lv.color}">
+          <div>
+            <span class="font-headline text-xl tracking-wide">${lv.label}</span>
+            <span class="font-label text-[9px] uppercase text-gray-600 ml-3">${wks.length} complexes</span>
+          </div>
+          <span class="material-symbols-outlined text-gray-500 ${isOpen?'rotate-180':''}"
+            style="transition:transform 0.2s">expand_more</span>
+        </button>
+        ${isOpen?`<div class="space-y-px">
+          ${wks.map((w,i)=>`<div onclick="openExtraDetail('${w.id}')"
+            class="flex items-center gap-4 p-4 bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer group">
+            <span class="font-headline text-xl w-7 text-center flex-shrink-0" style="color:${lv.color}">${String(bpAll.indexOf(w)+1).padStart(2,'0')}</span>
+            <div class="flex-1">
+              <p class="font-headline text-lg leading-none">${w.label} — ${w.title}</p>
+              <p class="font-label text-[10px] text-gray-500 mt-1">${w.meta}</p>
+            </div>
+            <span class="material-symbols-outlined text-gray-700 group-hover:text-error transition-colors">chevron_right</span>
+          </div>`).join("")}
+        </div>`:''}
+      </div>`;
+    }).join("");
+  }
+
+  return `<div class="screen bg-background" style="padding-top:56px;">
+    <main class="px-5 pt-8 pb-12">
+      <header class="mb-8">
+        <h1 class="font-headline text-6xl tracking-tight leading-none">TRAIN</h1>
+        <div class="w-12 h-1 bg-primary mt-2"></div>
       </header>
       ${tabBar}
-      ${sub==="oggi"?tabOggi():sub==="kb"?tabKB():sub==="bellplex"?tabBellplex():tabAXE()}
+      ${sub==="base"?tabBase():sub==="alt"?tabAlt():tabBellplex()}
     </main>
     ${navHTML("train")}
   </div>`;
@@ -4542,23 +4473,26 @@ function renderTrain(){
 // ── END RENDER TRAIN ──────────────────────────────────────────────────────────
 // ── END RENDER TRAIN ──────────────────────────────────────────────────────────
 // ── END RENDER TRAIN ──────────────────────────────────────────────────────────
+// ── END RENDER TRAIN ──────────────────────────────────────────────────────────
 
 
+
+function toggleAcc(id){state.plan.openAcc=state.plan.openAcc===id?null:id;render();}
 
 function render(){
   const app=document.getElementById("app");
-  if(state.tab==="workout")         app.innerHTML=renderWorkout();
-  else if(state.tab==="done")       app.innerHTML=renderDone();
-  else if(state.tab==="log")        app.innerHTML=renderLog();
-  else if(state.tab==="axe")        app.innerHTML=renderAxe();
-  else if(state.tab==="axe-workout")app.innerHTML=renderAxeWorkout();
-  else if(state.tab==="axe-done")   app.innerHTML=renderAxeDone();
-  else if(state.tab==="plan")       app.innerHTML=renderPlan();
-  else if(state.tab==="bp-workout")    app.innerHTML=renderBellplexWorkout();
-  else if(state.tab==="train")      app.innerHTML=renderTrain();
-  else if(state.tab==="extra")      app.innerHTML=renderTrain(); // redirect
+  if(state.tab==="workout")          app.innerHTML=renderWorkout();
+  else if(state.tab==="done")        app.innerHTML=renderDone();
+  else if(state.tab==="log")         app.innerHTML=renderLog();
+  else if(state.tab==="bp-workout")  app.innerHTML=renderBellplexWorkout();
+  else if(state.tab==="train")       app.innerHTML=renderTrain();
   else if(state.tab==="extra-detail")app.innerHTML=renderExtraDetail();
-  else if(state.tab==="health")     app.innerHTML=renderHealth();
+  else if(state.tab==="axe")         app.innerHTML=renderTrain();
+  else if(state.tab==="axe-workout") app.innerHTML=renderAxeWorkout();
+  else if(state.tab==="axe-done")    app.innerHTML=renderAxeDone();
+  else if(state.tab==="plan")        app.innerHTML=renderTrain();
+  else if(state.tab==="health")      app.innerHTML=renderLog();
+  else if(state.tab==="extra")       app.innerHTML=renderTrain();
   else                               app.innerHTML=renderHome();
 }
 
@@ -5043,7 +4977,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v17';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v19';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
