@@ -9,28 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="KB Trainer"/>
 <meta name="theme-color" content="#090C0F"/>
 <meta name="description" content="KB Trainer — Kettlebell AGT Smart Trainer"/>
-<link rel="manifest" id="manifest-placeholder"/>
-<script>
-(function(){
-  const manifest = {
-    name: 'Kettlebell Trainer',
-    short_name: 'KB Trainer',
-    description: 'Programma kettlebell strutturato — Metodo Pavel AGT.',
-    start_url: './',
-    display: 'standalone',
-    background_color: '#090C0F',
-    theme_color: '#090C0F',
-    orientation: 'portrait',
-    icons: [
-      {src: 'kb_trainer_icon_192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable'},
-      {src: 'kb_trainer_icon_512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable'}
-    ]
-  };
-  const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-  const url = URL.createObjectURL(blob);
-  document.getElementById('manifest-placeholder').setAttribute('href', url);
-})();
-</script>
+<link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="kb_trainer_icon_512.png"/>
 <title>KB Trainer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -4369,15 +4348,16 @@ function renderTrain(){
   ];
 
   const tabs=[
-    {id:"base",label:"Giorni"},
-    {id:"alt",label:"Alternativi"},
-    {id:"bellplex",label:"Bellplex"},
+    {id:"base",     label:"Giorni",      activeColor:"#ffb693", activeText:"#351000"},
+    {id:"alt",      label:"Alternativi", activeColor:"#ffb693", activeText:"#351000"},
+    {id:"bellplex", label:"Bellplex",    activeColor:"#ffb4ab", activeText:"#690005"},
+    {id:"axe",      label:"AXE",         activeColor:"#8b5cf6", activeText:"#fff"},
   ];
 
-  const tabBar=`<div class="flex gap-2 mb-8">
+  const tabBar=`<div class="flex gap-1 mb-8 overflow-x-auto no-scrollbar">
     ${tabs.map(t=>`<button onclick="state.trainSubTab='${t.id}';render()"
-      class="flex-1 py-2.5 font-headline text-base tracking-widest uppercase active:scale-95 transition-transform"
-      style="${sub===t.id?'background:#ffb693;color:#351000':'border:1px solid rgba(90,65,54,0.4);color:#64748b;background:transparent'}">${t.label}</button>`).join("")}
+      class="flex-1 min-w-0 py-2.5 font-headline text-sm tracking-widest uppercase active:scale-95 transition-transform whitespace-nowrap px-2"
+      style="${sub===t.id?`background:${t.activeColor};color:${t.activeText}`:'border:1px solid rgba(90,65,54,0.4);color:#64748b;background:transparent'}">${t.label}</button>`).join("")}
   </div>`;
 
   // ── BASE: A/B/C grandi ──
@@ -4479,6 +4459,63 @@ function renderTrain(){
     }).join("");
   }
 
+  // ── AXE: Pavel AGT ──
+  function tabAxe(){
+    const axeHist=state.axeHistory||[];
+    const lastAxe=axeHist.slice(-1)[0];
+    const prog=state.axeProgress||{week:1,day:1,sets:10};
+    return `
+    <!-- Principi -->
+    <div class="bg-surface-container ghost-border p-6 border-l-2 mb-3" style="border-color:#8b5cf6">
+      <p class="font-label text-[9px] uppercase tracking-[0.2em] mb-3" style="color:#8b5cf6">PAVEL AGT — Anti-Glycolytic Training</p>
+      <div class="space-y-2">
+        ${[
+          {icon:"record_voice_over", txt:"Talk Test — durante i set devi riuscire a parlare"},
+          {icon:"timer",             txt:"Recupero generoso tra i set — non accorciarlo"},
+          {icon:"favorite",          txt:"Frequenza cardiaca mai sopra l'85% della max"},
+          {icon:"bolt",              txt:"Set multipli (10–20) di poche reps (4–6)"},
+          {icon:"check_circle",      txt:"Compatibile con KB — non con Bellplex"},
+        ].map(r=>`<div class="flex items-start gap-3">
+          <span class="material-symbols-outlined text-base flex-shrink-0 mt-0.5" style="color:#8b5cf6;font-variation-settings:'FILL' 1">${r.icon}</span>
+          <p class="font-label text-sm text-on-surface-variant">${r.txt}</p>
+        </div>`).join("")}
+      </div>
+    </div>
+
+    <!-- Sessione corrente -->
+    <div class="bg-surface-container ghost-border p-6 border-l-2 mb-3" style="border-color:#8b5cf6">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <p class="font-label text-[9px] uppercase tracking-widest mb-1" style="color:#8b5cf6">SESSIONE CORRENTE</p>
+          <p class="font-headline text-4xl leading-none">Settimana ${prog.week} · Giorno ${prog.day}</p>
+        </div>
+        <div class="text-right">
+          <p class="font-headline text-5xl" style="color:#8b5cf6">${prog.sets}</p>
+          <p class="font-label text-[9px] uppercase text-gray-500">SET TARGET</p>
+        </div>
+      </div>
+      <p class="font-label text-xs text-gray-500 mb-5">KB Swing o Snatch · 5 reps/set · Riposo 60–90"</p>
+      <button onclick="switchTab('axe')"
+        class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
+        style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff">
+        INIZIA SESSIONE AXE
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">bolt</span>
+      </button>
+    </div>
+
+    <!-- Ultima sessione -->
+    ${lastAxe?`<div class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:#8b5cf688">
+      <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">ULTIMA SESSIONE</p>
+      <div class="flex justify-between items-center">
+        <div>
+          <p class="font-headline text-xl">Sett. ${lastAxe.week||'?'} · Giorno ${lastAxe.day||'?'}</p>
+          <p class="font-label text-[9px] text-gray-500 mt-1">${lastAxe.date||''} · ${lastAxe.sets||'?'} set completati</p>
+        </div>
+        ${lastAxe.feeling?`<span class="text-2xl">${lastAxe.feeling}</span>`:''}
+      </div>
+    </div>`:''}`;
+  }
+
   return `<div class="screen bg-background" style="padding-top:56px;">
     <main class="px-5 pt-8 pb-12">
       <header class="mb-8">
@@ -4486,7 +4523,7 @@ function renderTrain(){
         <div class="w-12 h-1 bg-primary mt-2"></div>
       </header>
       ${tabBar}
-      ${sub==="base"?tabBase():sub==="alt"?tabAlt():tabBellplex()}
+      ${sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():tabAxe()}
     </main>
     ${navHTML("train")}
   </div>`;
