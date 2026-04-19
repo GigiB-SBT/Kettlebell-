@@ -9,7 +9,28 @@
 <meta name="apple-mobile-web-app-title" content="KB Trainer"/>
 <meta name="theme-color" content="#090C0F"/>
 <meta name="description" content="KB Trainer — Kettlebell AGT Smart Trainer"/>
-<link rel="manifest" href="manifest.json"/>
+<link rel="manifest" id="manifest-placeholder"/>
+<script>
+(function(){
+  const manifest = {
+    name: 'Kettlebell Trainer',
+    short_name: 'KB Trainer',
+    description: 'Programma kettlebell strutturato — Metodo Pavel AGT.',
+    start_url: './',
+    display: 'standalone',
+    background_color: '#090C0F',
+    theme_color: '#090C0F',
+    orientation: 'portrait',
+    icons: [
+      {src: 'kb_trainer_icon_192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable'},
+      {src: 'kb_trainer_icon_512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable'}
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  document.getElementById('manifest-placeholder').setAttribute('href', url);
+})();
+</script>
 <link rel="apple-touch-icon" href="kb_trainer_icon_512.png"/>
 <title>KB Trainer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
