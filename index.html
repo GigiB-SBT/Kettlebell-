@@ -4495,7 +4495,7 @@ function renderTrain(){
         </div>
       </div>
       <p class="font-label text-xs text-gray-500 mb-5">KB Swing o Snatch · 5 reps/set · Riposo 60–90"</p>
-      <button onclick="switchTab('axe')"
+      <button onclick="state.tab='axe-setup';window.scrollTo(0,0);render()"
         class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
         style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff">
         INIZIA SESSIONE AXE
@@ -4545,6 +4545,7 @@ function render(){
   else if(state.tab==="bp-workout")  app.innerHTML=renderBellplexWorkout();
   else if(state.tab==="train")       app.innerHTML=renderTrain();
   else if(state.tab==="extra-detail")app.innerHTML=renderExtraDetail();
+  else if(state.tab==="axe-setup")   app.innerHTML=renderAxe();
   else if(state.tab==="axe")         app.innerHTML=renderTrain();
   else if(state.tab==="axe-workout") app.innerHTML=renderAxeWorkout();
   else if(state.tab==="axe-done")    app.innerHTML=renderAxeDone();
@@ -4839,7 +4840,8 @@ function saveAxeSession(){
     showToast("💪 Fase 2 completata! Aumenta il peso KB","ok");
   }
   saveAxeProgress();
-  state.tab="axe";
+  state.tab="train";
+  state.trainSubTab="axe";
   render();
 }
 
@@ -5035,7 +5037,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v20';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v22';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
