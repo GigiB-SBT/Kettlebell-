@@ -1008,7 +1008,7 @@ function renderWorkout(){
       <div class="absolute inset-0 rounded-full pointer-events-none" style="background:radial-gradient(circle,${accentHex}0a,transparent 65%)"></div>
       <svg class="absolute inset-0 w-full h-full" style="transform:rotate(-90deg)" viewBox="0 0 100 100">
         <circle cx="50" cy="50" fill="none" r="${r}" stroke="#1C2530" stroke-width="2"/>
-        <circle cx="50" cy="50" fill="none" r="${r}"
+        <circle id="timer-arc" cx="50" cy="50" fill="none" r="${r}"
           stroke="${glowColor}" stroke-dasharray="${dash} ${circ}"
           stroke-linecap="square" stroke-width="3"
           style="transition:stroke-dasharray 0.4s ease;filter:drop-shadow(0 0 6px ${glowColor}55)"/>
@@ -4642,15 +4642,21 @@ function startTimerInterval(){
     const step=DAYS[state.dayKey].seq[state.stepIdx];
     const isRest=step.type==="rest"||step.name==="Rest";
     const isAmrap=!!step.isAmrap;
-    const day=DAYS[state.dayKey];
-    const accentColor=isRest?"#1565C0":isAmrap?"#FFC107":day.color;
+    const KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
+    const accentColor=isRest?"#50dad1":isAmrap?"#e9c176":(KPhex[state.dayKey]||"#ffb693");
     const countdown=state.remaining<=3;
-    const wrap=document.getElementById("timer-wrap");
-    if(wrap)wrap.innerHTML=ringHTML(step.timerSec,state.remaining,accentColor,countdown);
-    const repsEl=document.getElementById("reps-label");
-    if(repsEl)repsEl.style.color=countdown?"#EF5350":accentColor;
+    const glowColor=countdown?"#ffb4ab":accentColor;
+    const disp=document.getElementById("timer-display");
+    if(disp){disp.textContent=fmtTime(state.remaining);disp.style.color=glowColor;}
+    const arc=document.getElementById("timer-arc");
+    if(arc&&step.timerSec>0){
+      const r=44,circ=2*Math.PI*r;
+      const dash=circ*(state.remaining/step.timerSec);
+      arc.setAttribute("stroke-dasharray",`${dash} ${circ}`);
+      arc.setAttribute("stroke",glowColor);
+    }
     const btn=document.getElementById("btn-startstop");
-    if(btn){btn.textContent="⏸ Pausa";btn.style.background="#CC4419";}
+    if(btn){btn.style.background="linear-gradient(135deg,#690005,#93000a)";btn.style.color="#ffb4ab";}
   },1000);
 }
 
@@ -5037,7 +5043,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v22';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v23';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
